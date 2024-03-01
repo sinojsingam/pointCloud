@@ -5,7 +5,6 @@ import os
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 
-
 os.chdir('../analysis')
 pc_file = 'data/lln_ground.las'
 
@@ -15,10 +14,8 @@ print('read las file')
 
 x, y, z = las.x, las.y, las.z
 
-
 points = np.vstack((las.x, las.y, las.z)).transpose()
 colors = np.vstack((las.red, las.green, las.blue)).transpose()
-
 
 # Geometric features extraction
 def extract_geometric_features(points):
