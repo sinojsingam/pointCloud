@@ -5,8 +5,10 @@ import os
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 
-os.chdir('../analysis')
-pc_file = 'data/lln_ground.las'
+fp = os.environ['LAS_FOLDER_PATH']
+laspath =  os.environ['LAS_FILE_PATH']
+os.chdir(fp)
+pc_file = f'{laspath}/lln_ground.las'
 
 print('reading las file')
 las = laspy.read(pc_file)
