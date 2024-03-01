@@ -1,4 +1,4 @@
-name: lln
+name: pointcloudenv
 channels:
   - conda-forge
   - defaults
