@@ -4,6 +4,9 @@ channels:
   - defaults
 dependencies:
   - numpy
+  - python=3.6
+  - pip>=9.0
+  - pandas>=0.22.0
   - scikit-learn
   - matplotlib
     - pip:
