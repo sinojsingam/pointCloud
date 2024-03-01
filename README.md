@@ -9,4 +9,12 @@ The workflow is as follows:
 - Using the training data, I calculated the geometric features
 - With the geometric feature, color and location information for each point in the point cloud, I trained the classifier
     
+What are the geometric features:
+- Omnivariance
+- Eigenentropy
+- Anisotropy
+- Sphericity
+- Surface variation
+- Verticality
+- Neighborhood colors
 K-means clustering and Random Forest algorithms are used.
