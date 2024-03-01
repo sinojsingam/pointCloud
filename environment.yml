@@ -1,0 +1,9 @@
+name: lln
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy
+  - scikit-learn
+  - laspy
+  - matplotlib
