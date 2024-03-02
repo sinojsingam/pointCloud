@@ -331,10 +331,6 @@ def rgb_to_hsv(r, g, b):
 
     return h, s, v
 
-# Example usage
-r, g, b = 255, 0, 0  # Red color
-h, s, v = rgb_to_hsv(r, g, b)
-print(f"Hue: {h}, Saturation: {s}%, Value: {v}%")
 
 def average_hsv_neighborhood_colors(points, colors, radius):
     """
