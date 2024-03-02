@@ -1,26 +1,21 @@
 import numpy as np
-from sklearn.neighbors import KDTree as skKDT
-from sklearn.metrics import pairwise_distances
-from scipy.spatial import KDTree
-from scipy.spatial import cKDTree
 
 
-def compute_omnivariance(points, radius):
+
+def compute_omnivariance(points, cKDTree, radius):
     """
     Calculate omnivariance for each point in the point cloud using a spherical neighborhood of a given radius.
 
     :param points: NumPy array of shape (N, 3) representing the point cloud.
+    :param KDTree: cKDTree from scipy
     :param radius: The radius to define the spherical neighborhood.
     :return: Array of omnivariance values for each point.
     """
-    tree = skKDT(points, leaf_size=10)
     omnivariance_values = []
+    #tree = cKDTree(points)
+    for i, point in enumerate(points):
 
-    #for i, point in enumerate(points):
-    for i in range(len(points)):
-        # Indices of points within the radius including the point itself
-        #indices = tree.query_ball_point(point, radius)
-        indices = tree.query_radius(points[i:i+1], r=radius, return_distance=False)[0]
+        indices = cKDTree.query_ball_point(point, radius)
         neighbors = points[indices]
         
         if len(neighbors) < 3:  # Need at least 3 points to form a plane
@@ -37,7 +32,7 @@ def compute_omnivariance(points, radius):
     
     return np.array(omnivariance_values)
 
-def compute_eigenentropy(points, radius):
+def compute_eigenentropy(points, cKDTree, radius):
     """
     Calculate Eigenentropy for each point in the point cloud using a spherical neighborhood.
 
@@ -45,13 +40,13 @@ def compute_eigenentropy(points, radius):
     :param radius: The radius to define the spherical neighborhood.
     :return: A NumPy array of Eigenentropy values for each point.
     """
-    tree = cKDTree(points)
     eigenentropy_values = []
-
-    for point in points:
-        # Find points within the spherical neighborhood
-        idx = tree.query_ball_point(point, radius)
-        neighbors = points[idx]
+    #tree = cKDTree(points)
+    
+    for i, point in enumerate(points):
+        
+        indices = cKDTree.query_ball_point(point, radius)
+        neighbors = points[indices]
         
         if len(neighbors) < 3:  # Ensure there are enough points to compute a covariance matrix
             eigenentropy_values.append(0)
@@ -74,7 +69,7 @@ def compute_eigenentropy(points, radius):
 
     return np.array(eigenentropy_values)
 
-def compute_anisotropy(points, radius):
+def compute_anisotropy(points, cKDTree, radius):
     """
     Compute Anisotropy for each point in the point cloud using spherical neighborhoods.
 
@@ -82,13 +77,12 @@ def compute_anisotropy(points, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Anisotropy values for each point.
     """
-    distances = pairwise_distances(points)
     anisotropy_values = []
 
     for i, point in enumerate(points):
-        # Identify points within the spherical neighborhood
-        within_radius = distances[i] <= radius
-        neighbors = points[within_radius]
+        
+        indices = cKDTree.query_ball_point(point, radius)
+        neighbors = points[indices]
         
         if len(neighbors) < 4:  # Ensuring enough points for a valid covariance matrix
             anisotropy_values.append(0)
@@ -107,7 +101,7 @@ def compute_anisotropy(points, radius):
     
     return np.array(anisotropy_values)
 
-def compute_linearity(points, radius):
+def compute_linearity(points, cKDTree, radius):
     """
     Compute Linearity for each point in the point cloud using spherical neighborhoods.
 
@@ -115,14 +109,12 @@ def compute_linearity(points, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Linearity values for each point.
     """
-    # Calculate pairwise distances between points
-    distances = pairwise_distances(points)
     linearity_values = []
 
     for i, point in enumerate(points):
-        # Find points within the spherical neighborhood
-        within_radius = distances[i] <= radius
-        neighbors = points[within_radius]
+        
+        indices = cKDTree.query_ball_point(point, radius)
+        neighbors = points[indices]
         
         if len(neighbors) < 4:  # Need at least 4 points to compute a covariance matrix
             linearity_values.append(0)
@@ -142,7 +134,7 @@ def compute_linearity(points, radius):
     
     return np.array(linearity_values)
 
-def compute_surface_variation(points, radius):
+def compute_surface_variation(points, cKDTree, radius):
     """
     Compute Surface Variation for each point in the point cloud using spherical neighborhoods.
 
@@ -151,13 +143,11 @@ def compute_surface_variation(points, radius):
     :return: A NumPy array of Surface Variation values for each point.
     """
     # Calculate pairwise distances between points
-    distances = pairwise_distances(points)
     surface_variation_values = []
 
     for i, point in enumerate(points):
-        # Find points within the spherical neighborhood
-        within_radius = distances[i] <= radius
-        neighbors = points[within_radius]
+        indices = cKDTree.query_ball_point(point, radius)
+        neighbors = points[indices]
         
         if len(neighbors) < 4:  # Need at least 4 points to compute a meaningful covariance matrix
             surface_variation_values.append(0)
@@ -178,7 +168,7 @@ def compute_surface_variation(points, radius):
     return np.array(surface_variation_values)
 
 #CHECK formula
-def compute_sphericity(points, radius):
+def compute_sphericity(points, cKDTree, radius):
     """
     Compute Sphericity for each point in the point cloud using spherical neighborhoods.
 
@@ -186,14 +176,13 @@ def compute_sphericity(points, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Sphericity values for each point.
     """
-    # Calculate pairwise distances between points
-    distances = pairwise_distances(points)
+
     sphericity_values = []
 
     for i, point in enumerate(points):
-        # Find points within the spherical neighborhood
-        within_radius = distances[i] <= radius
-        neighbors = points[within_radius]
+
+        indices = cKDTree.query_ball_point(point, radius)
+        neighbors = points[indices]
         
         if len(neighbors) < 4:  # Need at least 4 points for a meaningful covariance matrix
             sphericity_values.append(0)
@@ -213,47 +202,7 @@ def compute_sphericity(points, radius):
     
     return np.array(sphericity_values)
 
-#check formula
-# def compute_verticality(points, radius):
-#     """
-#     Compute Verticality for each point in the point cloud using spherical neighborhoods.
-
-#     :param points: NumPy array of shape (N, 3) representing the point cloud.
-#     :param radius: The radius of the spherical neighborhoods.
-#     :return: A NumPy array of Verticality values for each point.
-#     """
-#     distances = pairwise_distances(points)
-#     verticality_values = []
-
-#     for i, point in enumerate(points):
-#         # Find points within the spherical neighborhood
-#         within_radius = distances[i] <= radius
-#         neighbors = points[within_radius]
-        
-#         if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
-#             verticality_values.append(0)
-#             continue
-        
-#         # Compute the covariance matrix
-#         cov_matrix = np.cov(neighbors.T)
-        
-#         # Calculate eigenvalues and eigenvectors
-#         eigenvalues, eigenvectors = np.linalg.eigvalsh(cov_matrix)
-        
-#         # The eigenvector corresponding to the smallest eigenvalue
-#         normal_vector = eigenvectors[:, np.argmin(eigenvalues)]
-        
-#         # Calculate the angle between the normal vector and the vertical
-#         # Assuming the z-axis is [0, 0, 1]
-#         verticality = np.arccos(np.abs(normal_vector[2]))
-        
-#         # Convert from radians to degrees for easier interpretation
-#         verticality_degrees = np.degrees(verticality)
-#         verticality_values.append(verticality_degrees)
-    
-#     return np.array(verticality_values)
-
-def compute_first_order_moments(points, radius):
+def compute_first_order_moments(points, cKDTree, radius):
     """
     Compute the 1st order moments for each point in the point cloud within a radius-based neighborhood,
     oriented along the principal eigenvector.
@@ -262,12 +211,11 @@ def compute_first_order_moments(points, radius):
     :param radius: Radius to define the neighborhood around each point.
     :return: A list of 1st order moments for each point's neighborhood.
     """
-    tree = KDTree(points)
     moments = []
 
     for i, point in enumerate(points):
         # Find points within the radius
-        indices = tree.query_ball_point(point, radius)
+        indices = cKDTree.query_ball_point(point, radius)
         if len(indices) < 3:  # Need at least 3 points to compute a meaningful covariance matrix
             moments.append(np.array([0, 0, 0]))
             continue
@@ -330,7 +278,7 @@ def rgb_to_hsv(r, g, b):
     return h, s, v
 
 
-def average_hsv_neighborhood_colors(points, colors, radius):
+def average_hsv_neighborhood_colors(points, colors, cKDTree, radius):
     """
     Compute the average HSV color for each point in a point cloud within a spherical neighborhood.
     
@@ -339,12 +287,11 @@ def average_hsv_neighborhood_colors(points, colors, radius):
     :param radius: The radius defining the spherical neighborhood around each point.
     :return: A NumPy array of the averaged HSV colors for each point.
     """
-    tree = KDTree(points)
     averaged_colors = np.zeros_like(colors)
     
     for i, point in enumerate(points):
         # Indices of points within the radius including the point itself
-        indices = tree.query_ball_point(point, radius)
+        indices = cKDTree.query_ball_point(point, radius)
         
         # Sum and average the HSV colors of the neighborhood
         neighborhood_colors = colors[indices]
@@ -355,8 +302,7 @@ def average_hsv_neighborhood_colors(points, colors, radius):
     
     return averaged_colors
 
-
-def compute_verticality(points, radius):
+def compute_verticality(points, cKDTree, radius):
     """
     Compute Verticality for each point in the point cloud using spherical neighborhoods.
 
@@ -364,14 +310,13 @@ def compute_verticality(points, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Verticality values for each point.
     """
-    tree = skKDT(points, leaf_size=10)
+
     verticality_values = []
 
-    #for i, point in enumerate(points):
-    for i in range(len(points)):
-        # Indices of points within the radius including the point itself
-        #indices = tree.query_ball_point(point, radius)
-        indices = tree.query_radius(points[i:i+1], r=radius, return_distance=False)[0]
+    for i, point in enumerate(points):
+
+        indices = cKDTree.query_ball_point(point, radius)
+        #indices = tree.query_radius(points[i:i+1], r=radius, return_distance=False)[0] #for kdtree from scikit 
         neighbors = points[indices]
 
         if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
