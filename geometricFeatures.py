@@ -13,28 +13,29 @@ def compute_omnivariance(points, radius):
     :param radius: The radius to define the spherical neighborhood.
     :return: Array of omnivariance values for each point.
     """
-    omnivariances = []
-    # Compute pairwise distances between points
-    distances = pairwise_distances(points)
-    
-    for i, point in enumerate(points):
-        # Find points within the spherical neighborhood
-        within_radius = distances[i] <= radius
-        neighbors = points[within_radius]
+    tree = skKDT(points, leaf_size=10)
+    omnivariance_values = []
+
+    #for i, point in enumerate(points):
+    for i in range(len(points)):
+        # Indices of points within the radius including the point itself
+        #indices = tree.query_ball_point(point, radius)
+        indices = tree.query_radius(points[i:i+1], r=radius, return_distance=False)[0]
+        neighbors = points[indices]
         
         if len(neighbors) < 3:  # Need at least 3 points to form a plane
-            omnivariances.append(0)
+            omnivariance_values.append(0)
             continue
         
         # Compute covariance matrix of neighbors
         cov_matrix = np.cov(neighbors.T)
-        
         # Compute eigenvalues and calculate omnivariance
         eigenvalues = np.linalg.eigvalsh(cov_matrix)
+        #math calculation
         omnivariance = np.cbrt(np.product(eigenvalues))
-        omnivariances.append(omnivariance)
+        omnivariance_values.append(omnivariance)
     
-    return np.array(omnivariances)
+    return np.array(omnivariance_values)
 
 def compute_eigenentropy(points, radius):
     """
