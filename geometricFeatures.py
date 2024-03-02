@@ -1,8 +1,5 @@
-import laspy
-import CSF
-import sklearn
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import KDTree as skKDT
 from sklearn.metrics import pairwise_distances
 from scipy.spatial import KDTree
 from scipy.spatial import cKDTree
@@ -216,44 +213,44 @@ def compute_sphericity(points, radius):
     return np.array(sphericity_values)
 
 #check formula
-def compute_verticality(points, radius):
-    """
-    Compute Verticality for each point in the point cloud using spherical neighborhoods.
+# def compute_verticality(points, radius):
+#     """
+#     Compute Verticality for each point in the point cloud using spherical neighborhoods.
 
-    :param points: NumPy array of shape (N, 3) representing the point cloud.
-    :param radius: The radius of the spherical neighborhoods.
-    :return: A NumPy array of Verticality values for each point.
-    """
-    distances = pairwise_distances(points)
-    verticality_values = []
+#     :param points: NumPy array of shape (N, 3) representing the point cloud.
+#     :param radius: The radius of the spherical neighborhoods.
+#     :return: A NumPy array of Verticality values for each point.
+#     """
+#     distances = pairwise_distances(points)
+#     verticality_values = []
 
-    for i, point in enumerate(points):
-        # Find points within the spherical neighborhood
-        within_radius = distances[i] <= radius
-        neighbors = points[within_radius]
+#     for i, point in enumerate(points):
+#         # Find points within the spherical neighborhood
+#         within_radius = distances[i] <= radius
+#         neighbors = points[within_radius]
         
-        if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
-            verticality_values.append(0)
-            continue
+#         if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
+#             verticality_values.append(0)
+#             continue
         
-        # Compute the covariance matrix
-        cov_matrix = np.cov(neighbors.T)
+#         # Compute the covariance matrix
+#         cov_matrix = np.cov(neighbors.T)
         
-        # Calculate eigenvalues and eigenvectors
-        eigenvalues, eigenvectors = np.linalg.eigvalsh(cov_matrix)
+#         # Calculate eigenvalues and eigenvectors
+#         eigenvalues, eigenvectors = np.linalg.eigvalsh(cov_matrix)
         
-        # The eigenvector corresponding to the smallest eigenvalue
-        normal_vector = eigenvectors[:, np.argmin(eigenvalues)]
+#         # The eigenvector corresponding to the smallest eigenvalue
+#         normal_vector = eigenvectors[:, np.argmin(eigenvalues)]
         
-        # Calculate the angle between the normal vector and the vertical
-        # Assuming the z-axis is [0, 0, 1]
-        verticality = np.arccos(np.abs(normal_vector[2]))
+#         # Calculate the angle between the normal vector and the vertical
+#         # Assuming the z-axis is [0, 0, 1]
+#         verticality = np.arccos(np.abs(normal_vector[2]))
         
-        # Convert from radians to degrees for easier interpretation
-        verticality_degrees = np.degrees(verticality)
-        verticality_values.append(verticality_degrees)
+#         # Convert from radians to degrees for easier interpretation
+#         verticality_degrees = np.degrees(verticality)
+#         verticality_values.append(verticality_degrees)
     
-    return np.array(verticality_values)
+#     return np.array(verticality_values)
 
 def compute_first_order_moments(points, radius):
     """
@@ -358,7 +355,7 @@ def average_hsv_neighborhood_colors(points, colors, radius):
     return averaged_colors
 
 
-def compute_verticality2(points, radius):
+def compute_verticality(points, radius):
     """
     Compute Verticality for each point in the point cloud using spherical neighborhoods.
 
@@ -366,14 +363,16 @@ def compute_verticality2(points, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Verticality values for each point.
     """
-    tree = KDTree(points)
-
-    #distances = pairwise_distances(points)
+    tree = skKDT(points, leaf_size=10)
     verticality_values = []
-    for i, point in enumerate(points):
+
+    #for i, point in enumerate(points):
+    for i in range(len(points)):
         # Indices of points within the radius including the point itself
-        indices = tree.query_ball_point(point, radius)
+        #indices = tree.query_ball_point(point, radius)
+        indices = tree.query_radius(points[i:i+1], r=radius, return_distance=False)[0]
         neighbors = points[indices]
+
         if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
             verticality_values.append(0)
             continue
@@ -384,7 +383,7 @@ def compute_verticality2(points, radius):
 
         # The eigenvector corresponding to the smallest eigenvalue
         v_min = eigenvectors[:, np.argmin(eigenvalues)]
-        verticality = 1 - np.abs(v_min[2])
+        verticality = 1 - np.abs(v_min[2]) #3rd dimension
         verticality_values.append(verticality)
     
     return np.array(verticality_values)
