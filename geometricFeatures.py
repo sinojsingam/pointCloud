@@ -1,7 +1,5 @@
 import numpy as np
 
-
-
 def compute_omnivariance(points, cKDTree, radius):
     """
     Calculate omnivariance for each point in the point cloud using a spherical neighborhood of a given radius.
