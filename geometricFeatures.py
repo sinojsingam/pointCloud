@@ -388,32 +388,3 @@ def compute_verticality2(points, radius):
         verticality_values.append(verticality)
     
     return np.array(verticality_values)
-
-    # for i, point in enumerate(points):
-    #     # Find points within the spherical neighborhood
-    #     within_radius = distances[i] <= radius
-    #     neighbors = points[within_radius]
-        
-    #     if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
-    #         verticality_values.append(0)
-    #         continue
-        
-    #     # Compute the covariance matrix
-    #     cov_matrix = np.cov(neighbors.T)
-        
-    #     # Calculate eigenvalues and eigenvectors
-    #     eigenvalues, eigenvectors = np.linalg.eigvalsh(cov_matrix)
-        
-    #     # The eigenvector corresponding to the smallest eigenvalue
-    #     v_min = eigenvectors[:, np.argmin(eigenvalues)]
-        
-    #     # Calculate the angle between the normal vector and the vertical
-    #     # Assuming the z-axis is [0, 0, 1]
-    #     #verticality = np.arccos(np.abs(normal_vector[2]))
-    #     verticality = 1 - np.abs(v_min[2])
-        
-    #     # Convert from radians to degrees for easier interpretation
-    #     #verticality_degrees = np.degrees(verticality)
-    #     verticality_values.append(verticality)
-    
-    # return np.array(verticality_values)
