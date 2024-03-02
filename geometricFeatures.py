@@ -245,60 +245,40 @@ def compute_first_order_moments(points, cKDTree, radius):
     return moments
 
 #color manipulation
-def rgb_to_hsv(r, g, b):
-    r_prime = r / 255.0
-    g_prime = g / 255.0
-    b_prime = b / 255.0
-
-    c_max = max(r_prime, g_prime, b_prime)
-    c_min = min(r_prime, g_prime, b_prime)
+def normalized_rgb_to_hsv(normalized_colors):
+    """
+    Convert an array of normalized RGB values to HSV.
+    
+    Parameters:
+    - normalized_colors: numpy array of shape (n, 3) where each row contains normalized 16-bit R, G, B values.
+    
+    Returns:
+    - hsv_colors: numpy array of shape (n, 3) containing HSV values.
+    """
+    r, g, b = normalized_colors[:, 0], normalized_colors[:, 1], normalized_colors[:, 2]
+    c_max = np.max(normalized_colors, axis=1)
+    c_min = np.min(normalized_colors, axis=1)
     delta = c_max - c_min
 
     # Hue calculation
-    if delta == 0:
-        h = 0
-    elif c_max == r_prime:
-        h = 60 * (((g_prime - b_prime) / delta) % 6)
-    elif c_max == g_prime:
-        h = 60 * (((b_prime - r_prime) / delta) + 2)
-    elif c_max == b_prime:
-        h = 60 * (((r_prime - g_prime) / delta) + 4)
+    hue = np.zeros_like(c_max)
+    mask_r = (c_max == r) & (delta != 0)
+    mask_g = (c_max == g) & (delta != 0)
+    mask_b = (c_max == b) & (delta != 0)
+    
+    hue[mask_r] = (60 * ((g[mask_r] - b[mask_r]) / delta[mask_r]) + 360) % 360
+    hue[mask_g] = (60 * ((b[mask_g] - r[mask_g]) / delta[mask_g]) + 120) % 360
+    hue[mask_b] = (60 * ((r[mask_b] - g[mask_b]) / delta[mask_b]) + 240) % 360
 
     # Saturation calculation
-    if c_max == 0:
-        s = 0
-    else:
-        s = (delta / c_max) * 100
+    saturation = np.where(c_max == 0, 0, delta / c_max)
 
     # Value calculation
-    v = c_max * 100
+    value = c_max
 
-    return h, s, v
+    hsv_colors = np.vstack((hue, saturation * 100, value * 100)).transpose()
 
-
-def average_hsv_neighborhood_colors(points, colors, cKDTree, radius):
-    """
-    Compute the average HSV color for each point in a point cloud within a spherical neighborhood.
-    
-    :param points: NumPy array of shape (N, 3) representing the point cloud coordinates.
-    :param colors: NumPy array of shape (N, 3) representing the HSV colors of the points.
-    :param radius: The radius defining the spherical neighborhood around each point.
-    :return: A NumPy array of the averaged HSV colors for each point.
-    """
-    averaged_colors = np.zeros_like(colors)
-    
-    for i, point in enumerate(points):
-        # Indices of points within the radius including the point itself
-        indices = cKDTree.query_ball_point(point, radius)
-        
-        # Sum and average the HSV colors of the neighborhood
-        neighborhood_colors = colors[indices]
-        averaged_color = np.mean(neighborhood_colors, axis=0)
-        
-        # Assign the averaged color to the current point
-        averaged_colors[i] = averaged_color
-    
-    return averaged_colors
+    return hsv_colors
 
 def compute_verticality(points, cKDTree, radius):
     """
