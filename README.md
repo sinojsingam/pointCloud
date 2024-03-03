@@ -10,10 +10,11 @@ The workflow is as follows:
 - With the geometric feature, color and location information for each point in the point cloud, I trained the classifier
     
 What are the geometric features:
-- Omnivariance
-- Eigenentropy
-- Anisotropy
-- Sphericity
+- Omnivariance $\sqrt[3]{\lambda_1 \cdot \lambda_2 \cdot \lambda_3}$
+- Eigenentropy $-\sum_{i=1}^{3} \lambda_i \cdot \ln(\lambda_i)$
+- Anisotropy $(\lambda_{\text{min}} - \lambda_{\text{max}})/\lambda_{\text{min}}$
+- Sphericity 
+- Linearity
 - Surface variation
 - Verticality
 - Neighborhood colors
