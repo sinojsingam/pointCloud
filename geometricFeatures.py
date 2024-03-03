@@ -165,7 +165,6 @@ def compute_surface_variation(points, cKDTree, radius):
     
     return np.array(surface_variation_values)
 
-#CHECK formula
 def compute_sphericity(points, cKDTree, radius):
     """
     Compute Sphericity for each point in the point cloud using spherical neighborhoods.
@@ -193,9 +192,8 @@ def compute_sphericity(points, cKDTree, radius):
         eigenvalues = np.linalg.eigvalsh(cov_matrix)
         
         # Calculate Sphericity
-        lambda_1, lambda_2, lambda_3 = eigenvalues
-        total_variance = sum(eigenvalues)
-        sphericity = (3 * lambda_3) / total_variance if total_variance > 0 else 0
+        lambda_1, _, lambda_3 = eigenvalues
+        sphericity = lambda_3 / lambda_1 if lambda_1 > 0 else 0
         sphericity_values.append(sphericity)
     
     return np.array(sphericity_values)
@@ -244,6 +242,39 @@ def compute_first_order_moments(points, cKDTree, radius):
 
     return moments
 
+def compute_curvature(points, cKDTree, radius):
+    """
+    Compute Curvature for each point in the point cloud using spherical neighborhoods.
+
+    :param points: NumPy array of shape (N, 3) representing the point cloud.
+    :param radius: The radius of the spherical neighborhoods.
+    :return: A NumPy array of curvature values for each point.
+    """
+
+    curvature_values = []
+
+    for i, point in enumerate(points):
+
+        indices = cKDTree.query_ball_point(point, radius)
+        neighbors = points[indices]
+        
+        if len(neighbors) < 4:  # Need at least 4 points for a meaningful covariance matrix
+            curvature_values.append(0)
+            continue
+
+        # Compute the covariance matrix
+        cov_matrix = np.cov(neighbors.T)
+        
+        # Calculate eigenvalues and sort them in ascending order
+        eigenvalues = np.linalg.eigvalsh(cov_matrix)
+        
+        # Calculate Sphericity
+        lambda_1, lambda_2, lambda_3 = eigenvalues
+        curvature = lambda_3 / lambda_1 + lambda_2 + lambda_3 
+        curvature_values.append(curvature)
+    
+    return np.array(curvature_values)
+
 #color manipulation
 def normalized_rgb_to_hsv(normalized_colors):
     """
@@ -280,7 +311,7 @@ def normalized_rgb_to_hsv(normalized_colors):
 
     return hsv_colors
 
-def compute_verticality(points, cKDTree, radius):
+def compute_verticality(points):
     """
     Compute Verticality for each point in the point cloud using spherical neighborhoods.
 
@@ -291,23 +322,10 @@ def compute_verticality(points, cKDTree, radius):
 
     verticality_values = []
 
-    for i, point in enumerate(points):
+    for point in points:
+        nz = point[3]
 
-        indices = cKDTree.query_ball_point(point, radius)
-        #indices = tree.query_radius(points[i:i+1], r=radius, return_distance=False)[0] #for kdtree from scikit 
-        neighbors = points[indices]
-
-        if len(neighbors) < 4:  # Require at least 4 points for a meaningful covariance matrix
-            verticality_values.append(0)
-            continue
-        # Compute the covariance matrix
-        cov_matrix = np.cov(neighbors.T)
-        # Calculate eigenvalues and eigenvectors
-        eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
-
-        # The eigenvector corresponding to the smallest eigenvalue
-        v_min = eigenvectors[:, np.argmin(eigenvalues)]
-        verticality = 1 - np.abs(v_min[2]) #3rd dimension
+        verticality = 1 - nz #3rd dimension
         verticality_values.append(verticality)
     
     return np.array(verticality_values)
