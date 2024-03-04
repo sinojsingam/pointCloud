@@ -329,3 +329,23 @@ def compute_verticality(points):
         verticality_values.append(verticality)
     
     return np.array(verticality_values)
+
+def translate_coords(numpy_coords_array):
+    """
+    Translates array to make computations easier
+    :param array: NumPy array of shape (N, 3) representing the point cloud.
+    :return: A NumPy array of with translated coordinates.
+    """
+    X = numpy_coords_array[:,0]
+    Y = numpy_coords_array[:,1]
+    Z = numpy_coords_array[:,2]
+    #NZ = numpy_coords_array[:,3]
+    baseX = X[0] // 1000
+    baseY = Y[0] // 1000   # Find the base of the first element
+    bases_x = set(map(lambda x: x // 100000, X))
+    #bases_y = set(map(lambda x: x // 100000, Y))
+    if len(bases_x) == 1:
+        offset = (baseX*1000,baseY*1000)
+        point_coords = np.vstack((X - offset[0], Y - offset[1], Z)).transpose()
+        print(f'Translated with {offset}')
+        return point_coords
