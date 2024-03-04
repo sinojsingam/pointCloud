@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def compute_omnivariance(points, cKDTree, radius):
     """
     Calculate omnivariance for each point in the point cloud using a spherical neighborhood of a given radius.
@@ -311,3 +312,16 @@ def compute_verticality(points, cKDTree, radius):
         verticality_values.append(verticality)
     
     return np.array(verticality_values)
+
+
+def translate_coords(numpy_coords_array):
+   #if not arr:  # Check if the array is empty
+    #    return False
+    X = numpy_coords_array[:,0]
+    Y = numpy_coords_array[:,1]
+    baseX = X[0] // 1000
+    baseY = Y[0] // 1000   # Find the base of the first element
+    bases_x = set(map(lambda x: x // 100000, X))
+    bases_y = set(map(lambda x: x // 100000, Y))
+    if len(bases_x) == 1:
+        return (baseX*1000,baseY*1000)
