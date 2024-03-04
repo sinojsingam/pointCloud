@@ -340,13 +340,13 @@ def translate_coords(numpy_coords_array):
     X = numpy_coords_array[:,0]
     Y = numpy_coords_array[:,1]
     Z = numpy_coords_array[:,2]
-    #NZ = numpy_coords_array[:,3]
+    NZ = numpy_coords_array[:,3]
     baseX = X[0] // 1000
     baseY = Y[0] // 1000   # Find the base of the first element
     bases_x = set(map(lambda x: x // 100000, X))
     #bases_y = set(map(lambda x: x // 100000, Y))
     if len(bases_x) == 1:
         offset = (baseX*1000,baseY*1000)
-        point_coords = np.vstack((X - offset[0], Y - offset[1], Z)).transpose()
+        point_coords = np.vstack((X - offset[0], Y - offset[1], Z, NZ)).transpose()
         print(f'Translated with {offset}')
         return point_coords
