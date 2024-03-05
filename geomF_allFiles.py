@@ -7,28 +7,24 @@ import time
 import send_email
 import os
 
-
-directory_training = 'working/isolated_features'
-directory_geomFeat = 'working/geom_values/'
+directory_training = '../working/isolated_features'
+directory_geomFeat = '../working/geom_values/'
 ext = '.las'
 R = 0.5
-point_coords = np.vstack((las.x, las.y, las.z, las['normal z'])).transpose()
-translated_coords = geometricFeatures.translate_coords(point_coords)
-translated_3d = translated_coords[..., :-1]
-tree = cKDTree(translated_3d)
 
 for file in os.listdir(directory_training):
     if file.endswith(ext):
+        #FILE MANAGEMENT
         input_las_path = os.path.join(directory_training, file)
         LAS_name = os.path.basename(input_las_path)[:-13]
         output_las_path = directory_geomFeat + LAS_name + '_geom.las'
+        #CALCULATION
         print(f'### Calculating for {LAS_name} ###')
-
         las = laspy.read(input_las_path)
         point_coords = np.vstack((las.x, las.y, las.z, las['normal z'])).transpose()
-        translated_coords = geometricFeatures.translate_coords(point_coords)
-        translated_3d = translated_coords[..., :-1]
-        tree = cKDTree(translated_3d)
+        translated_coords = geometricFeatures.translate_coords(point_coords) #simplify coords
+        translated_3d = translated_coords[..., :-1] #just take the X,Y,Z. NZ is only needed for verticality
+        tree = cKDTree(translated_3d) #build tree
 
         ## colors = np.vstack((las.red,las.green,las.blue)).transpose() / 65535.0 
         ## point_cloud = np.hstack((point_coords, colors))
@@ -51,9 +47,9 @@ for file in os.listdir(directory_training):
         linearity = geometricFeatures.compute_linearity(translated_3d, tree, R)
         linearityTime = time.time()
 
-        print('Calculating surface variation...')
-        surface_variation = geometricFeatures.compute_sphericity(translated_3d, tree, R)
-        surVarTime = time.time()
+        print('Calculating curvature...')
+        curvature = geometricFeatures.compute_curvature(translated_3d, tree, R)
+        curvTime = time.time()
 
         print('Calculating sphericity...')
         sphericity = geometricFeatures.compute_sphericity(translated_3d, tree, R)
@@ -64,21 +60,21 @@ for file in os.listdir(directory_training):
         vertTime= time.time()
 
         print_message = f"""Geometric calculations are done. Time elapsed for functions: {round((vertTime - start)/60,2)} mins."""
-        times = [round((omniTime - start)/60,2), 
+        times = [round((omniTime - start)/60,2),
                 round((eigenTime - omniTime)/60,2),
                 round((anisoTime - eigenTime)/60,2),
                 round((linearityTime - anisoTime)/60,2),
-                round((surVarTime - linearityTime)/60,2),
-                round((spherTime - surVarTime)/60,2),
+                round((curvTime - linearityTime)/60,2),
+                round((spherTime - curvTime)/60,2),
                 round((vertTime - spherTime)/60,2)]
         geometricFeatures.printTimeElapsed(times)
         print(print_message)
-        
+        print("Writing to file...")
         dim_names = [f'Omnivariance ({R})', 
                      f'Eigenentropy ({R})', 
                      f'Anisotropy ({R})',
                      f'Linearity ({R})', 
-                     f'Surface variation ({R})', 
+                     f'Curvature ({R})', 
                      f'Sphericity ({R})',
                      f'Verticality ({R})']
 
@@ -97,11 +93,12 @@ for file in os.listdir(directory_training):
         las[dim_names[1]] = eigenentropy
         las[dim_names[2]] = anisotropy
         las[dim_names[3]] = linearity
-        las[dim_names[4]] = surface_variation
+        las[dim_names[4]] = curvature
         las[dim_names[5]] = sphericity
         las[dim_names[6]] = verticality
 
         las.write(output_las_path)
+        print("-"*20)
 
     else:
         continue

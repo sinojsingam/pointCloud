@@ -291,8 +291,7 @@ def compute_verticality(points):
     verticality_values = []
 
     for point in points:
-        nz = point[3]
-
+        nz = point[:,3]
         verticality = 1 - nz #3rd dimension
         verticality_values.append(verticality)
     
@@ -315,7 +314,7 @@ def translate_coords(numpy_coords_array):
     if len(bases_x) == 1:
         offset = (baseX*1000,baseY*1000)
         point_coords = np.vstack((X - offset[0], Y - offset[1], Z, NZ)).transpose()
-        print(f'Translated with {offset}')
+        print(f"""\nTranslated with {offset}\ne.g for X {X[0]} - {offset[0]} -> {round(X[0] - offset[0],2)}\nand for Y {Y[0]} - {offset[1]} -> {round(Y[0] - offset[1],2)}\n""")
         return point_coords
 
 #print table

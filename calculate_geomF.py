@@ -36,7 +36,7 @@ linearity = geometricFeatures.compute_linearity(translated_3d, tree, R)
 linearityTime = time.time()
 
 print('Calculating curvature...')
-surface_variation = geometricFeatures.compute_curvature(translated_3d, tree, R)
+curvature = geometricFeatures.compute_curvature(translated_3d, tree, R)
 surVarTime = time.time()
 
 print('Calculating sphericity...')
@@ -78,7 +78,7 @@ las[dim_names[0]] = omnivariance
 las[dim_names[1]] = eigenentropy
 las[dim_names[2]] = anisotropy
 las[dim_names[3]] = linearity
-las[dim_names[4]] = surface_variation
+las[dim_names[4]] = curvature
 las[dim_names[5]] = sphericity
 las[dim_names[6]] = verticality
 
