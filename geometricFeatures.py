@@ -315,7 +315,7 @@ def translate_coords(numpy_coords_array):
     if len(bases_x) == 1:
         offset = (baseX*1000,baseY*1000)
         point_coords = np.vstack((X - offset[0], Y - offset[1], Z, NZ)).transpose()
-        print(f"""\nTranslated with {offset}\ne.g for X {X[0]} - {offset[0]} -> {round(X[0] - offset[0],2)}\nand for Y {Y[0]} - {offset[0]} -> {round(Y[0] - offset[1],2)}\n""")
+        print(f'Translated with {offset}')
         return point_coords
 
 #print table
