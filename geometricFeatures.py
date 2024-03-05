@@ -5,9 +5,9 @@ def compute_omnivariance(points, cKDTree, radius):
     """
     Calculate omnivariance for each point in the point cloud using a spherical neighborhood of a given radius.
 
-    :param points: NumPy array of shape (N, 3) representing the point cloud.
-    :param KDTree: cKDTree from scipy
-    :param radius: The radius to define the spherical neighborhood.
+    :param points (ndarray): NumPy array of shape (N, 3) representing the point cloud.
+    :param cKDTree (cKDTree): cKDTree object from scipy
+    :param radius (int): The radius to define the spherical neighborhood.
     :return: Array of omnivariance values for each point.
     """
     omnivariance_values = []
@@ -133,23 +133,23 @@ def compute_linearity(points, cKDTree, radius):
     
     return np.array(linearity_values)
 
-def compute_surface_variation(points, cKDTree, radius):
+def compute_curvature(points, cKDTree, radius):
     """
-    Compute Surface Variation for each point in the point cloud using spherical neighborhoods.
+    Compute curvature or surface variation or  for each point in the point cloud using spherical neighborhoods.
 
     :param points: NumPy array of shape (N, 3) representing the point cloud.
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Surface Variation values for each point.
     """
     # Calculate pairwise distances between points
-    surface_variation_values = []
+    curvature_values = []
 
     for i, point in enumerate(points):
         indices = cKDTree.query_ball_point(point, radius)
         neighbors = points[indices]
         
         if len(neighbors) < 4:  # Need at least 4 points to compute a meaningful covariance matrix
-            surface_variation_values.append(0)
+            curvature_values.append(0)
             continue
 
         # Compute the covariance matrix
@@ -161,10 +161,10 @@ def compute_surface_variation(points, cKDTree, radius):
         # Calculate Surface Variation
         lambda_1, lambda_2, lambda_3 = eigenvalues
         total_variance = sum(eigenvalues)
-        surface_variation = lambda_3 / total_variance if total_variance > 0 else 0
-        surface_variation_values.append(surface_variation)
+        curvature = lambda_3 / total_variance if total_variance > 0 else 0
+        curvature_values.append(curvature)
     
-    return np.array(surface_variation_values)
+    return np.array(curvature_values)
 
 def compute_sphericity(points, cKDTree, radius):
     """
@@ -243,39 +243,6 @@ def compute_first_order_moments(points, cKDTree, radius):
 
     return moments
 
-def compute_curvature(points, cKDTree, radius):
-    """
-    Compute Curvature for each point in the point cloud using spherical neighborhoods.
-
-    :param points: NumPy array of shape (N, 3) representing the point cloud.
-    :param radius: The radius of the spherical neighborhoods.
-    :return: A NumPy array of curvature values for each point.
-    """
-
-    curvature_values = []
-
-    for i, point in enumerate(points):
-
-        indices = cKDTree.query_ball_point(point, radius)
-        neighbors = points[indices]
-        
-        if len(neighbors) < 4:  # Need at least 4 points for a meaningful covariance matrix
-            curvature_values.append(0)
-            continue
-
-        # Compute the covariance matrix
-        cov_matrix = np.cov(neighbors.T)
-        
-        # Calculate eigenvalues and sort them in ascending order
-        eigenvalues = np.linalg.eigvalsh(cov_matrix)
-        
-        # Calculate Sphericity
-        lambda_1, lambda_2, lambda_3 = eigenvalues
-        curvature = lambda_3 / lambda_1 + lambda_2 + lambda_3 
-        curvature_values.append(curvature)
-    
-    return np.array(curvature_values)
-
 #color manipulation
 def normalized_rgb_to_hsv(normalized_colors):
     """
@@ -330,7 +297,7 @@ def compute_verticality(points):
         verticality_values.append(verticality)
     
     return np.array(verticality_values)
-
+#translation
 def translate_coords(numpy_coords_array):
     """
     Translates array to make computations easier
@@ -340,13 +307,39 @@ def translate_coords(numpy_coords_array):
     X = numpy_coords_array[:,0]
     Y = numpy_coords_array[:,1]
     Z = numpy_coords_array[:,2]
-    #NZ = numpy_coords_array[:,3]
+    NZ = numpy_coords_array[:,3]
     baseX = X[0] // 1000
     baseY = Y[0] // 1000   # Find the base of the first element
     bases_x = set(map(lambda x: x // 100000, X))
     #bases_y = set(map(lambda x: x // 100000, Y))
     if len(bases_x) == 1:
         offset = (baseX*1000,baseY*1000)
-        point_coords = np.vstack((X - offset[0], Y - offset[1], Z)).transpose()
-        print(f'Translated with {offset}')
+        point_coords = np.vstack((X - offset[0], Y - offset[1], Z, NZ)).transpose()
+        print(f"""\nTranslated with {offset}\ne.g for X {X[0]} - {offset[0]} -> {round(X[0] - offset[0],2)}\nand for Y {Y[0]} - {offset[0]} -> {round(Y[0] - offset[1],2)}\n""")
         return point_coords
+
+#print table
+def printTimeElapsed(timeElapsed):
+    """
+    Print table with elapsed times for the geometric features
+    :param timeElapsed: array of times elapsed for the different geometric features
+
+    :return: print statement in the form of a table
+    """
+    headers = ["Geometric feature", "Time elapsed (mins)"]
+    rows = [
+        ["Omnisotropy", timeElapsed[0]],
+        ["Eigenentropy", timeElapsed[1]],
+        ["Anisotropy", timeElapsed[2]],
+        ["Linearity", timeElapsed[3]],
+        ["Surface variation", timeElapsed[4]],
+        ["Sphericity", timeElapsed[5]],
+        ["Verticality", timeElapsed[6]],
+    ]
+    # headers
+    header_row = "|".join(f"{header:^25}" for header in headers)
+    print(header_row)
+    print("-" * len(header_row))
+    # rows
+    for row in rows:
+        print("|".join(f"{str(item):^25}" for item in row))
