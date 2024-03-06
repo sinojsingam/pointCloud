@@ -75,7 +75,7 @@ for k,v in results.items():
     las[k] = v
 las.write(output_las_path)
 end = time.time()
-print_message=f"Time elapsed: {round((end-start)/60,2)} mins."
+print_message=f"Parallel calculations are done, time elapsed: {round((end-start)/60,2)} mins."
 print(print_message)
 #add mailme to CLI and get an email notification sent when scipt is done
 if len(sys.argv) >2:
