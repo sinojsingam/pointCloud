@@ -414,8 +414,7 @@ def createWorkingDir(sub_folder, main_folder="working"):
         print(f"Working folder '{main_folder}' created.")
     else:
         pass #already exists
-
-    # Check for the subfolder geom within the working folder
+    # Check for the subfolder 
     subfolder_path = os.path.join(main_folder_path, sub_folder)
     if not os.path.exists(subfolder_path):
         os.mkdir(subfolder_path)
