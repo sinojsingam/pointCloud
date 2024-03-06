@@ -1,17 +1,58 @@
 import numpy as np
+import os
+import time
+import laspy
+
+def addDimsToLAS(laspyLASObject,radius,dims=None):
+    if dims!=None:
+        pass
+    dim_names = [f'Omnivariance ({radius})', f'Eigenentropy ({radius})', f'Anisotropy ({radius})',
+    f'Linearity ({radius})', f'Curvature ({radius})', f'Sphericity ({radius})',f'Verticality ({radius})']
+    
+    #adding metadata to LAS
+    laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[1], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[2], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[3], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[4], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[5], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[6], type=np.float64)
+    ])
+    return "dims added"
+
+def saveLASFile(laspyLASObject, dim_name, numpyArray, output_las_path):
+    """
+    Recursive function for geometric Features computation. If compute functions have save=True,
+    then the a las file will be specified output path with an additional dimension pertaining to the geometric feature.
+    :param laspyLASObject: a laspy LAS object coming from laspy.read()
+    :dim_name (str): a name for the new dimension to be added to the LAS file
+    :numpyArray (array): a numpy array containing the values coming from the compute algorithm
+    :output_las_path (str): path for the file to be saved in.
+    :return: None
+    """
+    print(f"Writing LAS file to {output_las_path}")
+    #adding metadata to LAS
+    laspyLASObject.add_extra_dim(laspy.ExtraBytesParams(name=dim_name, type=np.float64))
+    #write the calculated data onto the las file then onto disk
+    laspyLASObject[dim_name] = numpyArray
+    laspyLASObject.write(output_las_path)
 
 
-def compute_omnivariance(points, cKDTree, radius):
+def compute_omnivariance(points, cKDTree, radius, save=False,laspyLASObject=None, output_las_path=None):
     """
     Calculate omnivariance for each point in the point cloud using a spherical neighborhood of a given radius.
 
     :param points (ndarray): NumPy array of shape (N, 3) representing the point cloud.
     :param cKDTree (cKDTree): cKDTree object from scipy
     :param radius (int): The radius to define the spherical neighborhood.
+    :save (Bool): if True, the resulting numpy array will be added to a new dimension and saved onto disk
+    :kwargs: parameters needed to save file, if file isnt being saved, they can be ignored
     :return: Array of omnivariance values for each point.
     """
+    dim_name = f'Omnivariance ({radius})'
+    start = time.time()
     omnivariance_values = []
-    #tree = cKDTree(points)
+    
     for i, point in enumerate(points):
 
         indices = cKDTree.query_ball_point(point, radius)
@@ -20,7 +61,6 @@ def compute_omnivariance(points, cKDTree, radius):
         if len(neighbors) < 3:  # Need at least 3 points to form a plane
             omnivariance_values.append(0)
             continue
-        
         # Compute covariance matrix of neighbors
         cov_matrix = np.cov(neighbors.T)
         # Compute eigenvalues and calculate omnivariance
@@ -28,10 +68,13 @@ def compute_omnivariance(points, cKDTree, radius):
         #math calculation
         omnivariance = np.cbrt(np.product(eigenvalues))
         omnivariance_values.append(omnivariance)
-    
-    return np.array(omnivariance_values)
+    end = time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    if save:
+        saveLASFile(laspyLASObject, dim_name, np.array(omnivariance_values), output_las_path)
+    return dim_name, np.array(omnivariance_values)
 
-def compute_eigenentropy(points, cKDTree, radius):
+def compute_eigenentropy(points, cKDTree, radius,save=False,laspyLASObject=None,output_las_path=None):
     """
     Calculate Eigenentropy for each point in the point cloud using a spherical neighborhood.
 
@@ -39,8 +82,9 @@ def compute_eigenentropy(points, cKDTree, radius):
     :param radius: The radius to define the spherical neighborhood.
     :return: A NumPy array of Eigenentropy values for each point.
     """
+    dim_name = f'Eigenentropy ({radius})'
+    start = time.time()
     eigenentropy_values = []
-    #tree = cKDTree(points)
     
     for i, point in enumerate(points):
         
@@ -65,10 +109,13 @@ def compute_eigenentropy(points, cKDTree, radius):
         # Calculate Eigenentropy
         eigenentropy = -np.sum(eigenvalues * np.log(eigenvalues))
         eigenentropy_values.append(eigenentropy)
+    end = time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    if save:
+        saveLASFile(laspyLASObject, dim_name, np.array(eigenentropy_values), output_las_path)
+    return dim_name, np.array(eigenentropy_values)
 
-    return np.array(eigenentropy_values)
-
-def compute_anisotropy(points, cKDTree, radius):
+def compute_anisotropy(points, cKDTree, radius,save=False,laspyLASObject=None, output_las_path=None):
     """
     Compute Anisotropy for each point in the point cloud using spherical neighborhoods.
 
@@ -76,6 +123,8 @@ def compute_anisotropy(points, cKDTree, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Anisotropy values for each point.
     """
+    dim_name = f'Anisotropy ({radius})'
+    start = time.time()
     anisotropy_values = []
 
     for i, point in enumerate(points):
@@ -97,10 +146,13 @@ def compute_anisotropy(points, cKDTree, radius):
         lambda_1, _, lambda_3 = eigenvalues[-1], eigenvalues[1], eigenvalues[0]
         anisotropy = (lambda_1 - lambda_3) / lambda_1 if lambda_1 > 0 else 0
         anisotropy_values.append(anisotropy)
-    
-    return np.array(anisotropy_values)
+    end = time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    if save:
+        saveLASFile(laspyLASObject, dim_name, np.array(anisotropy_values), output_las_path)
+    return dim_name, np.array(anisotropy_values)
 
-def compute_linearity(points, cKDTree, radius):
+def compute_linearity(points, cKDTree, radius,save=False,laspyLASObject=None, output_las_path=None):
     """
     Compute Linearity for each point in the point cloud using spherical neighborhoods.
 
@@ -108,8 +160,9 @@ def compute_linearity(points, cKDTree, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Linearity values for each point.
     """
+    dim_name = f'Linearity ({radius})'
+    start=time.time()
     linearity_values = []
-
     for i, point in enumerate(points):
         
         indices = cKDTree.query_ball_point(point, radius)
@@ -130,10 +183,13 @@ def compute_linearity(points, cKDTree, radius):
         lambda_1, lambda_2, _ = eigenvalues
         linearity = (lambda_1 - lambda_2) / lambda_1 if lambda_1 > 0 else 0
         linearity_values.append(linearity)
-    
-    return np.array(linearity_values)
+    end=time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    if save:
+        saveLASFile(laspyLASObject, dim_name, np.array(linearity_values), output_las_path)
+    return dim_name, np.array(linearity_values)
 
-def compute_curvature(points, cKDTree, radius):
+def compute_curvature(points, cKDTree, radius,save=False,laspyLASObject=None, output_las_path=None):
     """
     Compute curvature or surface variation or  for each point in the point cloud using spherical neighborhoods.
 
@@ -141,6 +197,8 @@ def compute_curvature(points, cKDTree, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Surface Variation values for each point.
     """
+    dim_name = f'Curvature ({radius})'
+    start = time.time()
     # Calculate pairwise distances between points
     curvature_values = []
 
@@ -163,10 +221,13 @@ def compute_curvature(points, cKDTree, radius):
         total_variance = sum(eigenvalues)
         curvature = lambda_3 / total_variance if total_variance > 0 else 0
         curvature_values.append(curvature)
-    
-    return np.array(curvature_values)
+    end = time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    if save:
+        saveLASFile(laspyLASObject, dim_name, np.array(curvature_values), output_las_path)
+    return dim_name, np.array(curvature_values)
 
-def compute_sphericity(points, cKDTree, radius):
+def compute_sphericity(points, cKDTree, radius,save=False,laspyLASObject=None, output_las_path=None):
     """
     Compute Sphericity for each point in the point cloud using spherical neighborhoods.
 
@@ -174,7 +235,8 @@ def compute_sphericity(points, cKDTree, radius):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Sphericity values for each point.
     """
-
+    dim_name = f'Sphericity ({radius})'
+    start = time.time()
     sphericity_values = []
 
     for i, point in enumerate(points):
@@ -196,8 +258,11 @@ def compute_sphericity(points, cKDTree, radius):
         lambda_1, _, lambda_3 = eigenvalues
         sphericity = lambda_3 / lambda_1 if lambda_1 > 0 else 0
         sphericity_values.append(sphericity)
-    
-    return np.array(sphericity_values)
+    end = time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    if save:
+        saveLASFile(laspyLASObject, dim_name, np.array(sphericity_values), output_las_path)
+    return dim_name, np.array(sphericity_values)
 
 def compute_first_order_moments(points, cKDTree, radius):
     """
@@ -289,11 +354,11 @@ def compute_verticality(points):
     """
 
     verticality_values = []
-
-    for point in points:
-        nz = point[:,3]
-        verticality = 1 - nz #3rd dimension
-        verticality_values.append(verticality)
+    verticality_values = list(map(lambda point: 1 - point[3], points))
+    # for point in points:
+    #     nz = point[:,3]
+    #     verticality = 1 - nz #3rd dimension
+    #     verticality_values.append(verticality)
     
     return np.array(verticality_values)
 #translation
@@ -318,27 +383,44 @@ def translate_coords(numpy_coords_array):
         return point_coords
 
 #print table
-def printTimeElapsed(timeElapsed):
+def printTimeElapsed(title,time):
     """
     Print table with elapsed times for the geometric features
     :param timeElapsed: array of times elapsed for the different geometric features
 
     :return: print statement in the form of a table
     """
-    headers = ["Geometric feature", "Time elapsed (mins)"]
-    rows = [
-        ["Omnisotropy", timeElapsed[0]],
-        ["Eigenentropy", timeElapsed[1]],
-        ["Anisotropy", timeElapsed[2]],
-        ["Linearity", timeElapsed[3]],
-        ["Surface variation", timeElapsed[4]],
-        ["Sphericity", timeElapsed[5]],
-        ["Verticality", timeElapsed[6]],
-    ]
+    #headers = ["Geometric feature", "Time elapsed (mins)"]
     # headers
-    header_row = "|".join(f"{header:^25}" for header in headers)
-    print(header_row)
-    print("-" * len(header_row))
+    #header_row = "|".join(f"{header:^25}" for header in headers)
+    #print(header_row)
+    #print("-" * len(header_row))
     # rows
-    for row in rows:
-        print("|".join(f"{str(item):^25}" for item in row))
+    timeList = [title,str(time)+' mins']
+    #print("|".join(f"{str(row):^25}") for row in timeList)
+    row_table = "|".join(f"{row:^25}" for row in timeList)
+    print(row_table)
+#create files
+def createWorkingDir(sub_folder, main_folder="working"):
+    """
+    This function checks if there is working directory in cwd and if yes, it doesnt do anything
+    if not, it will create working directory with a subfolder with user-specified name.
+    :param sub_folder (str): sub-directory withing the main directory
+    :param main_folder (str): default name for main directory is working
+    :return: directory with subdirectory
+    """
+    # Check for the working folder
+    main_folder_path = os.path.join(os.getcwd(), main_folder)
+    if not os.path.exists(main_folder_path):
+        os.mkdir(main_folder_path)
+        print(f"Working folder '{main_folder}' created.")
+    else:
+        pass #already exists
+
+    # Check for the subfolder geom within the working folder
+    subfolder_path = os.path.join(main_folder_path, sub_folder)
+    if not os.path.exists(subfolder_path):
+        os.mkdir(subfolder_path)
+        print(f"Subfolder '{sub_folder}' created in '{main_folder}'.")
+    else:
+        pass #already exists

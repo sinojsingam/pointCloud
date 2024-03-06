@@ -4,14 +4,31 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import laspy
+import geometricFeatures
 import time
 import send_email
 import sys
+import os
 
+full_las_path = sys.argv[1]
+training_las_path = sys.argv[2]
+ext_full = os.path.splitext(full_las_path)[-1].lower()
+ext_training = os.path.splitext(training_las_path)[-1].lower() 
+
+#check if input is a las file
+if ext_full == ".las" and ext_training == ".las":
+    LAS_name = os.path.splitext(os.path.basename(full_las_path))[0]
+    output_file = os.path.join('working','classification', LAS_name + "_clsd.las")
+    print(f"Now Classifying: {output_file}...")
+else:
+    print("ERROR: inputs are not a las file, quitting.")
+    exit()
+#create working folder (if it doesnt exist) with classification subfolder
+geometricFeatures.createWorkingDir(sub_folder='classification')
 print("Reading...")
 start_read = time.time()
-full = laspy.read('results/lln_geom2.las')
-training = laspy.read('results/training.las')
+full = laspy.read(full_las_path)
+training = laspy.read(training_las_path)
 
 # for dimension in full.point_format.dimensions:
 #     print(dimension.name)
@@ -49,12 +66,12 @@ gb_clf = GradientBoostingClassifier(n_estimators=300, learning_rate=0.2,
                                     max_depth=3, random_state=0)
 
 end_train = time.time()
-print(f"Trained in {(end_train-start_train)/60} mins. Now fitting...")
+print(f"Trained in {(end_train-end_read)/60} mins. Now fitting...")
 
 start_fit = time.time()
 gb_clf.fit(features_train, training_labels)
 end_fit = time.time()
-print(f"Fit in {(end_fit-end_read)/60} mins. Now predicting...")
+print(f"Fit in {(end_fit-end_train)/60} mins. Now predicting...")
 
 # result
 predictions_GBT = gb_clf.predict(features_lln)
@@ -73,14 +90,18 @@ full.add_extra_dims([laspy.ExtraBytesParams(name='RF', type=np.float64),
 full['RF'] = predictions_RF
 full['GBT'] = predictions_GBT
 
-full.write("results/lln_classified.las")
+full.write(output_file)
 done_time = time.time()
 
-print(f"Writing took {(done_time-end_pred)/60} mins. Classification without color data is done.\nThe whole process elapsed {(done_time - start_read)/3600} hours.\nClassified LAS file saved in ./results/lln_classified.las.\nGoodbye.")
+print(f"""Writing took {(done_time-end_pred)/60} mins. 
+      Classification without color data is done.
+      \nThe whole process elapsed {(done_time - start_read)/3600} hours.
+      \nClassified LAS file saved in ./results/lln_classified.las.\nGoodbye.""")
 
 #add mailme to CLI and get an email notification sent when scipt is done
-if len(sys.argv) >1:
-    if sys.argv[1]=='mailme':
-        send_email.sendNotification(f'Process finished. Classification without color data is done.\nThe whole process elapsed {(done_time - start_read)/3600} hours')
+if len(sys.argv) >3:
+    if sys.argv[3]=='mailme':
+        send_email.sendNotification(f"""Process finished. Classification without color data is done.
+                                    \nThe whole process elapsed {(done_time - start_read)/3600} hours""")
 
 
