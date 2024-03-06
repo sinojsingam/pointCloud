@@ -4,10 +4,43 @@ import numpy as np
 from scipy.spatial import cKDTree
 import geometricFeatures
 import time
+import os
 #import send_email
 
+input_las_path = sys.argv[1]
+output_directory = sys.argv[2]
+LAS_name = os.path.basename(input_las_path)[:-13]
 
-las = laspy.read('../working/isolated_features/car_training.las')
+
+
+def check_or_create_subfolder(main_folder="test", subfolder="geom"):
+    # Check for the working folder
+    main_folder_path = os.path.join(os.getcwd(), main_folder)
+    if not os.path.exists(main_folder_path):
+        os.mkdir(main_folder_path)
+        print(f"Working folder '{main_folder}' created.")
+    else:
+        pass #already exists
+
+    # Check for the subfolder geom within the working folder
+    subfolder_path = os.path.join(main_folder_path, subfolder)
+    if not os.path.exists(subfolder_path):
+        os.mkdir(subfolder_path)
+        print(f"Subfolder '{subfolder}' created in '{main_folder}'.")
+    else:
+        pass #already exists
+
+
+check_or_create_subfolder()
+
+
+
+base_name = LAS_name + '_geom.las'
+output_las_path = os.path.join(output_directory,base_name)
+
+
+
+las = laspy.read(input_las_path)
 R = 0.5
 point_coords = np.vstack((las.x, las.y, las.z, las['normal z'])).transpose()
 translated_coords = geometricFeatures.translate_coords(point_coords)
@@ -82,11 +115,11 @@ las[dim_names[4]] = curvature
 las[dim_names[5]] = sphericity
 las[dim_names[6]] = verticality
 
-output_las_path = '../working/geom_values/car_geom.las'
+#output_las_path = '../working/geom_values/car_geom.las'
 las.write(output_las_path)
 
 
 #add mailme to CLI and get an email notification sent when scipt is done
 # if len(sys.argv) >1:
-#     if sys.argv[1]=='mailme':
+#     if sys.argv[3]=='mailme':
 #         send_email.sendNotification(f'Process finished. {print_message}')
