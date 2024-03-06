@@ -14,7 +14,7 @@ if os.path.splitext(input_las_path)[-1].lower() == ".las":
     LAS_name_original = os.path.splitext(os.path.basename(input_las_path))[0]
     LAS_name = LAS_name_original.split('_')[0] + '_geom.las'
     output_las_path = os.path.join('working','geom',LAS_name)
-    print(f"Now Classifying: {LAS_name_original}...")
+    print(f"Now calculating for: {LAS_name_original}...")
 else:
     print("ERROR: input is not a las file, quitting.")
     exit()
@@ -35,44 +35,44 @@ tree = cKDTree(translated_3d)
 
 #GEOMETRIC FEATURES CALCULATION
 start = time.time()
-print('Calculating omnivariance...')
-omnivariance = geometricFeatures.compute_sphericity(translated_3d, tree, R)
-omniTime = time.time()
+# print('Calculating omnivariance...')
+omnivariance = geometricFeatures.compute_verticality(translated_coords)
+# omniTime = time.time()
 
-print('Calculating eigenentropy...')
-eigenentropy = geometricFeatures.compute_eigenentropy(translated_3d, tree, R)
-eigenTime = time.time()
+# print('Calculating eigenentropy...')
+# eigenentropy = geometricFeatures.compute_eigenentropy(translated_3d, tree, R)
+# eigenTime = time.time()
 
-print('Calculating anisotropy...')
-anisotropy = geometricFeatures.compute_anisotropy(translated_3d, tree, R)
-anisoTime = time.time()
+# print('Calculating anisotropy...')
+# anisotropy = geometricFeatures.compute_anisotropy(translated_3d, tree, R)
+# anisoTime = time.time()
 
-print('Calculating linearity...')
-linearity = geometricFeatures.compute_linearity(translated_3d, tree, R)
-linearityTime = time.time()
+# print('Calculating linearity...')
+# linearity = geometricFeatures.compute_linearity(translated_3d, tree, R)
+# linearityTime = time.time()
 
-print('Calculating curvature...')
-curvature = geometricFeatures.compute_curvature(translated_3d, tree, R)
-surVarTime = time.time()
+# print('Calculating curvature...')
+# curvature = geometricFeatures.compute_curvature(translated_3d, tree, R)
+# surVarTime = time.time()
 
-print('Calculating sphericity...')
-sphericity = geometricFeatures.compute_sphericity(translated_3d, tree, R)
-spherTime= time.time()
+# print('Calculating sphericity...')
+# sphericity = geometricFeatures.compute_sphericity(translated_3d, tree, R)
+# spherTime= time.time()
 
-# print('Calculating verticality...')
-# verticality = list(map(lambda point: 1 - point[3], translated_coords))
+print('Calculating verticality...')
+verticality = list(map(lambda point: 1 - point[3], translated_coords))
 vertTime= time.time()
 #print_message = f'Geometric calculations are done, time elapsed for functions: {(end - start)/60} mins.'
 print_message = f"""
 Geometric calculations are done. Time elapsed for functions: {round((vertTime - start)/60,2)} mins.
 """
-times = [round((omniTime - start)/60,2), 
-         round((eigenTime - omniTime)/60,2),
-         round((anisoTime - eigenTime)/60,2),
-         round((linearityTime - anisoTime)/60,2),
-         round((surVarTime - linearityTime)/60,2),
-         round((spherTime - surVarTime)/60,2),
-         round((vertTime - spherTime)/60,2)]
+# times = [round((omniTime - start)/60,2), 
+#          round((eigenTime - omniTime)/60,2),
+#          round((anisoTime - eigenTime)/60,2),
+#          round((linearityTime - anisoTime)/60,2),
+#          round((surVarTime - linearityTime)/60,2),
+#          round((spherTime - surVarTime)/60,2),
+#          round((vertTime - spherTime)/60,2)]
 
 print(print_message)
 
@@ -81,13 +81,13 @@ f'Linearity ({R})', f'Curvature ({R})', f'Sphericity ({R})',f'Verticality ({R})'
 print(f"Writing LAS file to {output_las_path}")
 
 #write the calculated data onto the las file
-las[dim_names[0]] = omnivariance[1]
-las[dim_names[1]] = eigenentropy[1]
-las[dim_names[2]] = anisotropy[1]
-las[dim_names[3]] = linearity[1]
-las[dim_names[4]] = curvature[1]
-las[dim_names[5]] = sphericity[1]
-#las[dim_names[6]] = verticality
+las[dim_names[0]] = omnivariance
+# las[dim_names[1]] = eigenentropy[1]
+# las[dim_names[2]] = anisotropy[1]
+# las[dim_names[3]] = linearity[1]
+# las[dim_names[4]] = curvature[1]
+# las[dim_names[5]] = sphericity[1]
+las[dim_names[6]] = verticality
 
 #output_las_path = '../working/geom_values/car_geom.las'
 las.write(output_las_path)

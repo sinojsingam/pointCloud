@@ -18,7 +18,7 @@ if os.path.splitext(input_las_path)[-1].lower() == ".las":
     LAS_name = LAS_name_original.split('_')[0] + '_geom.las'
     output_las_path = os.path.join('working','geom',LAS_name)
     
-    print(f"Now Classifying: {LAS_name_original}...")
+    print(f"Now calculating for: {LAS_name_original}...")
 else:
     print("ERROR: input is not a las file, quitting.")
     exit()
@@ -55,6 +55,8 @@ results={}
 with ProcessPoolExecutor() as executor:
     #run in parallel
     futures = [executor.submit(func, translated_3d, tree, R) for func in functions_to_run]
+    futures.append(executor.submit(geometricFeatures.compute_verticality, translated_coords))
+
     f, _ = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
 
     for future in futures:
@@ -73,7 +75,7 @@ with ProcessPoolExecutor() as executor:
             print(f"Function execution failed with error: {e}")
 for k,v in results.items():
     las[k] = v
-las.write(output_las_path)
+#las.write(output_las_path)
 end = time.time()
 print_message=f"Parallel calculations are done, time elapsed: {round((end-start)/60,2)} mins."
 print(print_message)

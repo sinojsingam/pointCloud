@@ -7,7 +7,7 @@ def addDimsToLAS(laspyLASObject,radius,dims=None):
     if dims!=None:
         pass
     dim_names = [f'Omnivariance ({radius})', f'Eigenentropy ({radius})', f'Anisotropy ({radius})',
-    f'Linearity ({radius})', f'Curvature ({radius})', f'Sphericity ({radius})',f'Verticality ({radius})']
+    f'Linearity ({radius})', f'Curvature ({radius})', f'Sphericity ({radius})',f'Verticality']
     
     #adding metadata to LAS
     laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=np.float64),
@@ -352,15 +352,13 @@ def compute_verticality(points):
     :param radius: The radius of the spherical neighborhoods.
     :return: A NumPy array of Verticality values for each point.
     """
-
+    start = time.time()
+    dim_name = f'Verticality'
     verticality_values = []
     verticality_values = list(map(lambda point: 1 - point[3], points))
-    # for point in points:
-    #     nz = point[:,3]
-    #     verticality = 1 - nz #3rd dimension
-    #     verticality_values.append(verticality)
-    
-    return np.array(verticality_values)
+    end = time.time()
+    printTimeElapsed(dim_name, round((end-start)/60,2))
+    return dim_name, np.array(verticality_values)
 #translation
 def translate_coords(numpy_coords_array):
     """
