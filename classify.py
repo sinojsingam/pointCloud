@@ -10,9 +10,10 @@ import sys
 import os
 import send_email
 
-
 full_las_path = sys.argv[1]
 training_las_path = sys.argv[2]
+#third is optional mailme which will send a mail once it is done
+
 ext_full = os.path.splitext(full_las_path)[-1].lower()
 ext_training = os.path.splitext(training_las_path)[-1].lower() 
 

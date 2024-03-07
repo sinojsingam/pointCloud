@@ -4,6 +4,10 @@ from sendgrid.helpers.mail import Mail
 try:
     import sendGridCreds
     api_key = sendGridCreds.SENDGRID_API_KEY
+    """
+    #Add functionality for CLI to change to mail
+    #by default mail will be sent to sinoj 
+    """
     to_email = 'sinoj.singam@gmail.com'
     def sendNotification(msg):
         message = Mail(
