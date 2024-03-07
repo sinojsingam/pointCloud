@@ -7,7 +7,7 @@ def addDimsToLAS(laspyLASObject,radius,dims=None):
     if dims!=None:
         pass
     dim_names = [f'Omnivariance ({radius})', f'Eigenentropy ({radius})', f'Anisotropy ({radius})',
-    f'Linearity ({radius})', f'Curvature ({radius})', f'Sphericity ({radius})',f'Verticality']
+    f'Linearity ({radius})', f'Curvature ({radius})', f'Sphericity ({radius})',f'Planarity ({radius})',f'Verticality']
     
     #adding metadata to LAS
     laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=np.float64),
@@ -16,7 +16,8 @@ def addDimsToLAS(laspyLASObject,radius,dims=None):
                         laspy.ExtraBytesParams(name=dim_names[3], type=np.float64),
                         laspy.ExtraBytesParams(name=dim_names[4], type=np.float64),
                         laspy.ExtraBytesParams(name=dim_names[5], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[6], type=np.float64)
+                        laspy.ExtraBytesParams(name=dim_names[6], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[7], type=np.float64)
     ])
     return "dims added"
 
@@ -126,7 +127,7 @@ def compute_anisotropy(points, cKDTree, radius,save=False,laspyLASObject=None, o
     dim_name = f'Anisotropy ({radius})'
     start = time.time()
     anisotropy_values = []
-
+    
     for i, point in enumerate(points):
         
         indices = cKDTree.query_ball_point(point, radius)
@@ -384,7 +385,7 @@ def translate_coords(numpy_coords_array):
 def printTimeElapsed(title,time):
     """
     Print table with elapsed times for the geometric features
-    :param timeElapsed: array of times elapsed for the different geometric features
+    :param timeElapsed: str of times elapsed for the different geometric features
 
     :return: print statement in the form of a table
     """
