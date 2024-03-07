@@ -3,4 +3,5 @@
 *.ipynb_checkpoints
 *.env
 __pycache__/
-
+sendGridCreds.py
+sendgrid.env

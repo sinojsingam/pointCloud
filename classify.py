@@ -6,9 +6,10 @@ from sklearn.metrics import accuracy_score
 import laspy
 import geometricFeatures
 import time
-import send_email
 import sys
 import os
+
+
 
 full_las_path = sys.argv[1]
 training_las_path = sys.argv[2]
@@ -30,8 +31,10 @@ start_read = time.time()
 full = laspy.read(full_las_path)
 training = laspy.read(training_las_path)
 
-# for dimension in full.point_format.dimensions:
-#     print(dimension.name)
+# if True:
+#     for dimension in training.point_format.dimensions:
+#         print(dimension.name)
+#     exit()
 
 training_labels = training.classification
 
@@ -51,7 +54,7 @@ features_lln = np.vstack((full['Omnivariance (0.5)'],
                             full['Planarity (0.5)'],
                             full['Linearity (0.5)'],
                             full['1st order moment (0.5)'],
-                            full['Surface variation2'],
+                            full['Surface variation (0.5)'],
                             full['Sphericity (0.5)'],
                             full['Verticality (0.5)'])).T
 
@@ -98,10 +101,10 @@ print(f"""Writing took {(done_time-end_pred)/60} mins.
       \nThe whole process elapsed {(done_time - start_read)/3600} hours.
       \nClassified LAS file saved in ./results/lln_classified.las.\nGoodbye.""")
 
-#add mailme to CLI and get an email notification sent when scipt is done
-if len(sys.argv) >3:
-    if sys.argv[3]=='mailme':
-        send_email.sendNotification(f"""Process finished. Classification without color data is done.
-                                    \nThe whole process elapsed {(done_time - start_read)/3600} hours""")
+# #add mailme to CLI and get an email notification sent when scipt is done
+# if len(sys.argv) >3:
+#     if sys.argv[3]=='mailme':
+#         send_email.sendNotification(f"""Process finished. Classification without color data is done.
+#                                     \nThe whole process elapsed {(done_time - start_read)/3600} hours""")
 
 
