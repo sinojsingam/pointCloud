@@ -61,7 +61,7 @@ for i, point in enumerate(translated_3d):
     lambda_1, lambda_2, lambda_3 = eigenvalues
     omni = calculateFeatures.compute_omnivariance(eigenvalues)
     eigen = calculateFeatures.compute_omnivariance(eigenvalues)
-    aniso = calculateFeatures.compute_anisotropy(lambda_1, lambda_2, lambda_3)
+    aniso = calculateFeatures.compute_anisotropy(lambda_1, lambda_3)
     linear = calculateFeatures.compute_linearity(lambda_1, lambda_2, lambda_3)
     planar = calculateFeatures.compute_planarity(lambda_2, lambda_3)
     curve = calculateFeatures.compute_curvature(lambda_1, lambda_2, lambda_3)
