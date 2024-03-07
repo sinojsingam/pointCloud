@@ -94,6 +94,9 @@ las.write(output_las_path)
 
 
 #add mailme to CLI and get an email notification sent when scipt is done
-if len(sys.argv) >2:
-    if sys.argv[2]=='mailme':
-        send_email.sendNotification(f'Process finished. {print_message}')
+try:
+    if len(sys.argv) >2:
+        if sys.argv[2]=='mailme':
+            send_email.sendNotification(f'Process finished. {print_message}')
+except:
+    print("mail was not send, due to API key error")

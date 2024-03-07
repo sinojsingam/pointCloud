@@ -104,6 +104,9 @@ for file in os.listdir(directory_training):
         continue
 
 #add mailme to CLI and get an email notification sent when scipt is done
-if len(sys.argv) >1:
-    if sys.argv[1]=='mailme':
-        send_email.sendNotification(f'Process finished. {print_message}')
+try:
+    if len(sys.argv) >1:
+        if sys.argv[1]=='mailme':
+            send_email.sendNotification(f'Process finished. {print_message}')
+except:
+    print("mail was not send, due to API key error")

@@ -8,7 +8,7 @@ import geometricFeatures
 import time
 import sys
 import os
-
+import send_email
 
 
 full_las_path = sys.argv[1]
@@ -102,9 +102,12 @@ print(f"""Writing took {(done_time-end_pred)/60} mins.
       \nClassified LAS file saved in ./results/lln_classified.las.\nGoodbye.""")
 
 # #add mailme to CLI and get an email notification sent when scipt is done
-# if len(sys.argv) >3:
-#     if sys.argv[3]=='mailme':
-#         send_email.sendNotification(f"""Process finished. Classification without color data is done.
-#                                     \nThe whole process elapsed {(done_time - start_read)/3600} hours""")
+try:
+    if len(sys.argv) >3:
+        if sys.argv[3]=='mailme':
+            send_email.sendNotification(f"""Process finished. Classification without color data is done.
+                                        \nThe whole process elapsed {(done_time - start_read)/3600} hours""")
+except:
+    print("mail was not send, due to API key error")
 
 
