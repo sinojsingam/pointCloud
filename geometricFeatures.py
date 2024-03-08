@@ -19,7 +19,7 @@ def addDimsToLAS(laspyLASObject,radius,dims=None):
                  f'Height Above ({radius})', #10
                  f'Color H', #11
                  f'Color S', #12
-                 f'Color V']#13
+                 f'Color V'] #13
     
     
     #adding metadata to LAS

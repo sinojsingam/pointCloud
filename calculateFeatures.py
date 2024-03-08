@@ -2,15 +2,18 @@ import numpy as np
 from numpy.linalg import eigh
 import colorsys
 
+
+
 def compute_covariance_matrix(neighbors):
     return np.cov(neighbors.T)
 
 def compute_eigenvalues(covariance_matrix):
     eigenvalues, _ = eigh(covariance_matrix) #it gives eigen values and vectors as tuple
-    return np.flip(np.sort(eigenvalues)) #l1>l2>l3
+    print()
+    return tuple(np.flip(np.sort(eigenvalues))) #l1>l2>l3
 
 def compute_omnivariance(eigenvalues):
-    return np.cbrt(np.product(eigenvalues))
+    return np.cbrt(np.prod(eigenvalues))
 
 def compute_eigenentropy(eigenvalues):
     eigenvalues = eigenvalues[eigenvalues > 0]
