@@ -89,7 +89,7 @@ for i, point in enumerate(translated_3d):
     eigenvalues = calculateFeatures.compute_eigenvalues(cov_matrix)
     lambda_1, lambda_2, lambda_3 = eigenvalues #l1>l2>l3
     omni = calculateFeatures.compute_omnivariance(eigenvalues)
-    eigen = calculateFeatures.compute_omnivariance(eigenvalues)
+    eigen = calculateFeatures.compute_eigenentropy(eigenvalues)
     aniso = calculateFeatures.compute_anisotropy(lambda_1, lambda_3)
     linear = calculateFeatures.compute_linearity(lambda_1, lambda_2)
     planar = calculateFeatures.compute_planarity(lambda_1, lambda_2, lambda_3)

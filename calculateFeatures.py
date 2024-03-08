@@ -9,8 +9,7 @@ def compute_covariance_matrix(neighbors):
 
 def compute_eigenvalues(covariance_matrix):
     eigenvalues, _ = eigh(covariance_matrix) #it gives eigen values and vectors as tuple
-    print()
-    return tuple(np.flip(np.sort(eigenvalues))) #l1>l2>l3
+    return np.flip(np.sort(eigenvalues)) #l1>l2>l3
 
 def compute_omnivariance(eigenvalues):
     return np.cbrt(np.prod(eigenvalues))
