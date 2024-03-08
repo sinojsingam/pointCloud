@@ -13,7 +13,7 @@ import colorsys
 start = time.time()
 
 input_las_path =sys.argv[1]
-subfolder = "test"
+subfolder = "calculated"
 #check if input is a las file
 if os.path.splitext(input_las_path)[-1].lower() == ".las":
     LAS_name_original = os.path.splitext(os.path.basename(input_las_path))[0]
