@@ -18,7 +18,7 @@ print(f"Initial memory usage: {init_memory_usage / (1024 * 1024)} mb")
 start = time.time()
 
 input_las_path =sys.argv[1]
-subfolder = "car"
+
 #check if input is a las file
 if os.path.splitext(input_las_path)[-1].lower() == ".las":
     LAS_name_original = os.path.splitext(os.path.basename(input_las_path))[0]
@@ -51,7 +51,7 @@ dim_names = [f'Omnivariance ({radius})', #0
 
 #if working doesnt exist, create it with
 #subfolder geom else the func does nothing
-geometricFeatures.createWorkingDir(sub_folder= subfolder)
+geometricFeatures.createWorkingDir(sub_folder= LAS_name_original)
 las = laspy.read(input_las_path)
 
 #add dimensions to las
