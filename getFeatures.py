@@ -159,7 +159,7 @@ df = pd.DataFrame(pointsDict)
 df.to_csv(output_las_path, sep=',')
 
 end = time.time()
-print_message=f'Time elapsed: {(end-start)/60} mins.'
+print_message=f'Calculations for {LAS_name_original} are done. Time elapsed: {(end-start)/60} mins.'
 print(print_message)
 #add mailme to CLI and get an email notification sent when scipt is done
 try:
