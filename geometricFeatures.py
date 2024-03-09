@@ -6,20 +6,24 @@ import laspy
 def addDimsToLAS(laspyLASObject,radius,dims=None):
     if dims!=None:
         pass
+
     dim_names = [f'Omnivariance ({radius})', #0
-                 f'Eigenentropy ({radius})', #1
-                 f'Anisotropy ({radius})', #2
-                 f'Linearity ({radius})', #3
-                 f'Curvature ({radius})', #4
-                 f'Sphericity ({radius})',#5
-                 f'Planarity ({radius})', #6
-                 f'Verticality', #7
-                 f'Height Range ({radius})', #8
-                 f'Height Below ({radius})', #9
-                 f'Height Above ({radius})', #10
-                 f'Color H', #11
-                 f'Color S', #12
-                 f'Color V'] #13
+                    f'Eigenentropy ({radius})', #1
+                    f'Anisotropy ({radius})', #2
+                    f'Linearity ({radius})', #3
+                    f'Curvature ({radius})', #4
+                    f'Sphericity ({radius})',#5
+                    f'Planarity ({radius})', #6
+                    f'Verticality', #7
+                    f'Height Range ({radius})', #8
+                    f'Height Below ({radius})', #9
+                    f'Height Above ({radius})', #10
+                    f'Color H', #11
+                    f'Color S', #12
+                    f'Color V', #13
+                    f'NeighborColor H ({radius})', #14
+                    f'NeighborColor S ({radius})', #15
+                    f'NeighborColor V ({radius})',] #16
     
     
     #adding metadata to LAS
@@ -36,7 +40,10 @@ def addDimsToLAS(laspyLASObject,radius,dims=None):
                         laspy.ExtraBytesParams(name=dim_names[10], type=np.float64),
                         laspy.ExtraBytesParams(name=dim_names[11], type=np.float64),
                         laspy.ExtraBytesParams(name=dim_names[12], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[13], type=np.float64)
+                        laspy.ExtraBytesParams(name=dim_names[13], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[14], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[15], type=np.float64),
+                        laspy.ExtraBytesParams(name=dim_names[16], type=np.float64),
     ])
     return "dims added"
 
