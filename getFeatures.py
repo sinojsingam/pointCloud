@@ -9,7 +9,7 @@ import send_email
 import calculateFeatures
 import colorsys
 import resource
-
+import pandas as pd
 
 init_memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 print(f"Initial memory usage: {init_memory_usage / (1024 * 1024)} mb")
@@ -23,7 +23,7 @@ input_las_path =sys.argv[1]
 if os.path.splitext(input_las_path)[-1].lower() == ".las":
     LAS_name_original = os.path.splitext(os.path.basename(input_las_path))[0]
     subfolder = LAS_name_original
-    LAS_name = LAS_name_original.split('_')[0] + f'_{subfolder}.las'
+    LAS_name = LAS_name_original.split('_')[0] + '_geom.csv'
     output_las_path = os.path.join('working',subfolder,LAS_name)
     print(f"Now calculating for: {LAS_name_original}...")
 else:
@@ -55,13 +55,12 @@ dim_names = [f'Omnivariance ({radius})', #0
 try:
     geometricFeatures.createWorkingDir(sub_folder= subfolder)
 except:
-    print('creating subfolder didnt work, result is saved in working folder')
     output_las_path = os.path.join('working',LAS_name)
+    print(f"! Creating subfolder didn't work, result is being saved in {output_las_path}")
 
 las = laspy.read(input_las_path)
 
 #add dimensions to las
-#geometricFeatures.addDimsToLAS(las,radius)
 #get info
 point_coords = np.vstack((las.x, las.y, las.z, las['normal z'])).transpose()
 translated_coords = geometricFeatures.translate_coords(point_coords)
@@ -72,112 +71,93 @@ translated_3d_color = np.hstack([translated_3d, colors_hsv])
 tree = cKDTree(translated_3d)
 
 #GEOMETRIC
-omniList = []
-eigenList = []
-anisoList = []
-linList = []
-planarList = []
-curveList = []
-sphereList = []
-heighRangeList = []
-heighBelowList = []
-heighAboveList = []
-neighboringHList = []
-neighboringSList = []
-neighboringVList = []
-xList = []
-yList = []
-zList = []
-#loops only once for all calculations
+
+#initiating np array
+#per neighbor
+omniList = np.zeros(len(las.x))
+eigenList = np.zeros(len(las.x))
+anisoList = np.zeros(len(las.x))
+linList = np.zeros(len(las.x))
+planarList = np.zeros(len(las.x))
+curveList = np.zeros(len(las.x))
+sphereList = np.zeros(len(las.x))
+heightRangeList = np.zeros(len(las.x))
+heightBelowList = np.zeros(len(las.x))
+heightAboveList = np.zeros(len(las.x))
+neighboringHList = np.zeros(len(las.x))
+neighboringSList = np.zeros(len(las.x))
+neighboringVList = np.zeros(len(las.x))
+#perpoint
+xList = np.array(las.x)
+yList = np.array(las.y)
+zList = np.array(las.z)
+H_List = colors_hsv[:,:1].ravel()
+S_List = colors_hsv[:,1:2].ravel()
+V_List = colors_hsv[:,2:3].ravel()
+verticalityList = calculateFeatures.compute_verticality(translated_coords)
+
+#loops only once for all calculations according to neighbors
 for i, point in enumerate(translated_3d_color):
-    indices = tree.query_ball_point(point[..., :3], radius)
+    indices = tree.query_ball_point(point[..., :3], radius) #query just the coordinates
     neighbors = translated_3d_color[indices]
     if len(neighbors) < 4:  # Need at least 4 points to compute a meaningful covariance matrix
-        omniList.append(0.)
-        eigenList.append(0.)
-        anisoList.append(0.)
-        linList.append(0.)
-        planarList.append(0.)
-        curveList.append(0.)
-        sphereList.append(0.)
-        heighRangeList.append(0.)
-        heighBelowList.append(0.)
-        heighAboveList.append(0.)
-        neighboringHList.append(0.)
-        neighboringSList.append(0.)
-        neighboringVList.append(0.)
-        continue
-    heighRange, heighBelow, heighAbove = calculateFeatures.compute_height(point, neighbors)
-    cov_matrix = calculateFeatures.compute_covariance_matrix(neighbors[...,:3]) #just the coordinates
-    eigenvalues = calculateFeatures.compute_eigenvalues(cov_matrix)
-    lambda_1, lambda_2, lambda_3 = eigenvalues #l1>l2>l3
-    omni = calculateFeatures.compute_omnivariance(eigenvalues)
-    eigen = calculateFeatures.compute_eigenentropy(eigenvalues)
-    aniso = calculateFeatures.compute_anisotropy(lambda_1, lambda_3)
-    linear = calculateFeatures.compute_linearity(lambda_1, lambda_2)
-    planar = calculateFeatures.compute_planarity(lambda_1, lambda_2, lambda_3)
-    curve = calculateFeatures.compute_curvature(lambda_1, lambda_2, lambda_3)
-    sphere = calculateFeatures.compute_sphericity(lambda_1, lambda_3)
-    k_H, k_S, k_V = np.round(np.mean(neighbors[...,-3:], axis=0), decimals=2) #retrieve neighboring colors
-    omniList.append(omni)
-    eigenList.append(eigen)
-    anisoList.append(aniso)
-    linList.append(linear)
-    planarList.append(planar)
-    curveList.append(curve)
-    sphereList.append(sphere)
-    heighRangeList.append(heighRange)
-    heighBelowList.append(heighBelow)
-    heighAboveList.append(heighAbove)
-    neighboringHList.append(k_H)
-    neighboringSList.append(k_S)
-    neighboringVList.append(k_V)
-    xList.append(point[0])
-    yList.append(point[1])
-    zList.append(point[2])
+        pass
+    else:
+        heightRange, heightBelow, heightAbove = calculateFeatures.compute_height(point, neighbors)
+        cov_matrix = calculateFeatures.compute_covariance_matrix(neighbors[...,:3]) #just the coordinates are enough
+        eigenvalues = calculateFeatures.compute_eigenvalues(cov_matrix)
+        lambda_1, lambda_2, lambda_3 = eigenvalues #where l1>l2>l3
+        omni = calculateFeatures.compute_omnivariance(eigenvalues)
+        eigen = calculateFeatures.compute_eigenentropy(eigenvalues)
+        aniso = calculateFeatures.compute_anisotropy(lambda_1, lambda_3)
+        linear = calculateFeatures.compute_linearity(lambda_1, lambda_2)
+        planar = calculateFeatures.compute_planarity(lambda_1, lambda_2, lambda_3)
+        curve = calculateFeatures.compute_curvature(lambda_1, lambda_2, lambda_3)
+        sphere = calculateFeatures.compute_sphericity(lambda_1, lambda_3)
+        k_H, k_S, k_V = np.round(np.mean(neighbors[...,-3:], axis=0), decimals=2) #retrieve neighboring colors
+        omniList[i] = omni
+        eigenList[i] = eigen
+        anisoList[i] = aniso
+        linList[i] = linear
+        planarList[i] = planar
+        curveList[i] = curve
+        sphereList[i] = sphere
+        heightRangeList[i] = heightRange
+        heightBelowList[i] = heightBelow
+        heightAboveList[i] = heightAbove
+        neighboringHList[i] = k_H
+        neighboringSList[i] = k_S
+        neighboringVList[i] = k_V
 
 
-#output_las_path = os.path.join('working',subfolder,"omnivariance.csv")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_x.csv"), xList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_y.csv"), yList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_z.csv"), zList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_omnivariance.csv"), omniList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_eigen.csv"), eigenList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_aniso.csv"), anisoList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_linear.csv"), linList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_planar.csv"), planarList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_curvature.csv"), curveList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_spheri.csv"), sphereList,fmt='%.8f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_heightRange.csv"), heighRangeList,fmt='%.2f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_heightBelow.csv"), heighBelowList,fmt='%.2f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_heightAbove.csv"), heighAboveList,fmt='%.2f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_neighboringHList.csv"), neighboringHList,fmt='%.2f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_neighboringSList.csv"), neighboringSList,fmt='%.2f', delimiter=",")
-np.savetxt(os.path.join('working',subfolder,f"{LAS_name_original}_neighboringVList.csv"), neighboringVList,fmt='%.2f', delimiter=",")
+pointsDict = {
+        "X": xList,
+        "Y": yList,
+        "Z": zList,
+        "H": H_List,
+        "S": S_List,
+        "V": V_List,
+        "classification": np.array(las.classification),
+        "normal z": np.array(las['normal z']),
+        "omnivariance": omniList,
+        "eigenentropy": eigenList,
+        "anisotropy": anisoList,
+        "linearity": linList,
+        "planarity": planarList,
+        "curvature": curveList,
+        "sphericity": sphereList,
+        "verticality": verticalityList,
+        "height_range":heightRangeList,
+        "height_below": heightBelowList,
+        "height_above": heightAboveList,
+        "neighbor_H": neighboringHList,
+        "neighbor_S": neighboringSList,
+        "neighbor_V": neighboringVList,  
+    }
 
-#write the calculated data onto the las file
-# las[dim_names[0]] = omniList
-# las[dim_names[1]] = eigenList
-# las[dim_names[2]] = ansioList
-# las[dim_names[3]] = linList
-# las[dim_names[4]] = curveList
-# las[dim_names[5]] = sphereList
-# las[dim_names[6]] = planarList
-# # verticality is independent of the neighbors 1 - normal z
-# # using translated_coords since it has the normal z
-# las[dim_names[7]] = calculateFeatures.compute_verticality(translated_coords)
-# las[dim_names[8]] = heighRangeList
-# las[dim_names[9]] = heighBelowList
-# las[dim_names[10]] = heighAboveList
-# #HSV colors
-# las[dim_names[11]] = colors_hsv[:,0] #H
-# las[dim_names[12]] = colors_hsv[:,1] #S
-# las[dim_names[13]] = colors_hsv[:,2] #V
+df = pd.DataFrame(pointsDict)
+df.to_csv(output_las_path, sep=',')
 
-# las[dim_names[14]] = neighboringHList #H
-# las[dim_names[15]] = neighboringSList #S
-# las[dim_names[16]] = neighboringVList #V
-#las.write(output_las_path)
 end = time.time()
 print_message=f'Time elapsed: {(end-start)/60} mins.'
 print(print_message)
@@ -189,8 +169,27 @@ try:
 except:
     print("mail was not send, due to API key error")
 
-
 max_memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 print(f"Maximum memory usage: {max_memory_usage / (1024 * 1024)} mb")
 
 print(f"Delta memory usage: {(max_memory_usage - init_memory_usage)/(1024 * 1024)} mb")
+
+
+# import pandas as pd
+# df = pd.read_csv('../working/car_training/car_car_training.csv')
+# las_version = las.header.version
+# point_format = las.header.point_format
+
+# new_las = laspy.create(point_format=point_format, file_version=las_version)
+
+# new_las.x = np.array(df['X']+667000.0) #add translation
+# new_las.y = np.array(df['Y']+650000.0)
+# new_las.z = np.array(df['Z'])
+# new_las.red = np.array(las.red)
+# new_las.green = np.array(las.green)
+# new_las.blue = np.array(las.blue)
+# new_las.classification = np.array(df['classification'])
+# new_las.add_extra_dim(laspy.ExtraBytesParams(name='omnivariance', type=np.float64))
+#geometricFeatures.addDimsToLAS(las,radius)
+# new_las.omnivariance = np.array(df['omnivariance'])
+# new_las.write('../working/car_training/car.las')
