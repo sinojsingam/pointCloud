@@ -22,6 +22,7 @@ input_las_path =sys.argv[1]
 #check if input is a las file
 if os.path.splitext(input_las_path)[-1].lower() == ".las":
     LAS_name_original = os.path.splitext(os.path.basename(input_las_path))[0]
+    subfolder = LAS_name_original
     LAS_name = LAS_name_original.split('_')[0] + f'_{subfolder}.las'
     output_las_path = os.path.join('working',subfolder,LAS_name)
     print(f"Now calculating for: {LAS_name_original}...")
@@ -51,7 +52,7 @@ dim_names = [f'Omnivariance ({radius})', #0
 
 #if working doesnt exist, create it with
 #subfolder geom else the func does nothing
-geometricFeatures.createWorkingDir(sub_folder= LAS_name_original)
+geometricFeatures.createWorkingDir(sub_folder= subfolder)
 las = laspy.read(input_las_path)
 
 #add dimensions to las
