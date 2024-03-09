@@ -52,7 +52,12 @@ dim_names = [f'Omnivariance ({radius})', #0
 
 #if working doesnt exist, create it with
 #subfolder geom else the func does nothing
-geometricFeatures.createWorkingDir(sub_folder= subfolder)
+try:
+    geometricFeatures.createWorkingDir(sub_folder= subfolder)
+except:
+    print('creating subfolder didnt work, result is saved in working folder')
+    output_las_path = os.path.join('working',LAS_name)
+
 las = laspy.read(input_las_path)
 
 #add dimensions to las
