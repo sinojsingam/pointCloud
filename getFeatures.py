@@ -14,23 +14,27 @@ import pandas as pd
 init_memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 print(f"Initial memory usage: {init_memory_usage / (1024 * 1024)} mb")
 
-
 start = time.time()
 
 input_las_path =sys.argv[1]
+radius_input =sys.argv[2]
 
-#check if input is a las file
+#check if input is a las file and continue
 if os.path.splitext(input_las_path)[-1].lower() == ".las":
-    LAS_name_original = os.path.splitext(os.path.basename(input_las_path))[0]
-    subfolder = LAS_name_original
-    LAS_name = LAS_name_original.split('_')[0] + '_geom.csv'
-    output_las_path = os.path.join('working',subfolder,LAS_name)
-    print(f"Now calculating for: {LAS_name_original}...")
+    #get name of the file
+    LAS_name_full = os.path.splitext(os.path.basename(input_las_path))[0]
+    subfolder = LAS_name_full
+    #get the name before the _ and add new term
+    LAS_name = LAS_name_full.split('_')[0] + '_geom.csv'
+    #output will be in working folder (later would be created)
+    output_las_path = os.path.join('working', subfolder, LAS_name)
+    #parse search radius input
+    radius = float(radius_input)
+    print(f"Now calculating for: {LAS_name_full}...")
 else:
     print("ERROR: input is not a las file, quitting.")
     exit()
 
-radius = 0.5 #search radius
 
 dim_names = [f'Omnivariance ({radius})', #0
                  f'Eigenentropy ({radius})', #1
@@ -60,10 +64,9 @@ except:
 
 las = laspy.read(input_las_path)
 
-#add dimensions to las
-#get info
+#get las data as np arrays
 point_coords = np.vstack((las.x, las.y, las.z, las['normal z'])).transpose()
-translated_coords = geometricFeatures.translate_coords(point_coords)
+translated_coords = geometricFeatures.translate_coords(point_coords, offsets=las.header.offsets)
 translated_3d = translated_coords[..., :-1]
 colors_rgb = np.vstack((las.red,las.green,las.blue)).transpose() / 65535.0 #normalise
 colors_hsv = np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_rgb]),decimals=2)
@@ -71,29 +74,29 @@ translated_3d_color = np.hstack([translated_3d, colors_hsv])
 tree = cKDTree(translated_3d)
 
 #GEOMETRIC
-
+data_type = np.float32
 #initiating np array
-#per neighbor
-omniList = np.zeros(len(las.x))
-eigenList = np.zeros(len(las.x))
-anisoList = np.zeros(len(las.x))
-linList = np.zeros(len(las.x))
-planarList = np.zeros(len(las.x))
-curveList = np.zeros(len(las.x))
-sphereList = np.zeros(len(las.x))
-heightRangeList = np.zeros(len(las.x))
-heightBelowList = np.zeros(len(las.x))
-heightAboveList = np.zeros(len(las.x))
-neighboringHList = np.zeros(len(las.x))
-neighboringSList = np.zeros(len(las.x))
-neighboringVList = np.zeros(len(las.x))
-#perpoint
+#values for each neighbor
+omniList = np.zeros(len(las.x), dtype=data_type)
+eigenList = np.zeros(len(las.x), dtype=data_type)
+anisoList = np.zeros(len(las.x), dtype=data_type)
+linList = np.zeros(len(las.x), dtype=data_type)
+planarList = np.zeros(len(las.x), dtype=data_type)
+curveList = np.zeros(len(las.x), dtype=data_type)
+sphereList = np.zeros(len(las.x), dtype=data_type)
+heightRangeList = np.zeros(len(las.x), dtype=data_type)
+heightBelowList = np.zeros(len(las.x), dtype=data_type)
+heightAboveList = np.zeros(len(las.x), dtype=data_type)
+neighboringHList = np.zeros(len(las.x), dtype=data_type)
+neighboringSList = np.zeros(len(las.x), dtype=data_type)
+neighboringVList = np.zeros(len(las.x), dtype=data_type)
+#values for each point
 xList = np.array(las.x)
 yList = np.array(las.y)
 zList = np.array(las.z)
-H_List = colors_hsv[:,:1].ravel()
-S_List = colors_hsv[:,1:2].ravel()
-V_List = colors_hsv[:,2:3].ravel()
+H_List = colors_hsv[:,0]
+S_List = colors_hsv[:,1]
+V_List = colors_hsv[:,2]
 verticalityList = calculateFeatures.compute_verticality(translated_coords)
 
 #loops only once for all calculations according to neighbors
@@ -114,7 +117,8 @@ for i, point in enumerate(translated_3d_color):
         planar = calculateFeatures.compute_planarity(lambda_1, lambda_2, lambda_3)
         curve = calculateFeatures.compute_curvature(lambda_1, lambda_2, lambda_3)
         sphere = calculateFeatures.compute_sphericity(lambda_1, lambda_3)
-        k_H, k_S, k_V = np.round(np.mean(neighbors[...,-3:], axis=0), decimals=2) #retrieve neighboring colors
+        #retrieve avg neighboring colors
+        k_H, k_S, k_V = np.round(np.mean(neighbors[...,-3:], axis=0), decimals=2)
         omniList[i] = omni
         eigenList[i] = eigen
         anisoList[i] = aniso
@@ -128,7 +132,6 @@ for i, point in enumerate(translated_3d_color):
         neighboringHList[i] = k_H
         neighboringSList[i] = k_S
         neighboringVList[i] = k_V
-
 
 pointsDict = {
         "X": xList,
@@ -159,37 +162,24 @@ df = pd.DataFrame(pointsDict)
 df.to_csv(output_las_path, sep=',')
 
 end = time.time()
-print_message=f'Calculations for {LAS_name_original} are done. Time elapsed: {(end-start)/60} mins.'
+duration = end-start
+if duration/60 > 30:
+    duration_parsed = str(round((end-start)/3600,3)) + 'hours'
+else:
+    duration_parsed = str(round((end-start)/60,3)) + 'minutes'
+
+print_message=f'Calculations for {LAS_name_full} are done. Time elapsed: {duration_parsed}.'
 print(print_message)
+
 #add mailme to CLI and get an email notification sent when scipt is done
 try:
-    if len(sys.argv) >2:
-        if sys.argv[2]=='mailme':
-            send_email.sendNotification(f'Process finished. {print_message}')
+    #check if mailme command exists
+    if len(sys.argv)>=3 and sys.argv[3]=='mailme':
+            send_email.sendNotification(f'Geometric feature calculation finished. {print_message}')
 except:
-    print("mail was not send, due to API key error")
+    print("Mail was not send due to API key error")
 
 max_memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 print(f"Maximum memory usage: {max_memory_usage / (1024 * 1024)} mb")
 
 print(f"Delta memory usage: {(max_memory_usage - init_memory_usage)/(1024 * 1024)} mb")
-
-
-# import pandas as pd
-# df = pd.read_csv('../working/car_training/car_car_training.csv')
-# las_version = las.header.version
-# point_format = las.header.point_format
-
-# new_las = laspy.create(point_format=point_format, file_version=las_version)
-
-# new_las.x = np.array(df['X']+667000.0) #add translation
-# new_las.y = np.array(df['Y']+650000.0)
-# new_las.z = np.array(df['Z'])
-# new_las.red = np.array(las.red)
-# new_las.green = np.array(las.green)
-# new_las.blue = np.array(las.blue)
-# new_las.classification = np.array(df['classification'])
-# new_las.add_extra_dim(laspy.ExtraBytesParams(name='omnivariance', type=np.float64))
-#geometricFeatures.addDimsToLAS(las,radius)
-# new_las.omnivariance = np.array(df['omnivariance'])
-# new_las.write('../working/car_training/car.las')

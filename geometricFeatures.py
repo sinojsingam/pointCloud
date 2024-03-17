@@ -25,25 +25,25 @@ def addDimsToLAS(laspyLASObject,radius,dims=None):
                     f'NeighborColor S ({radius})', #15
                     f'NeighborColor V ({radius})',] #16
     
-    
+    data_type = np.float32
     #adding metadata to LAS
-    laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[1], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[2], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[3], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[4], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[5], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[6], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[7], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[8], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[9], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[10], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[11], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[12], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[13], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[14], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[15], type=np.float64),
-                        laspy.ExtraBytesParams(name=dim_names[16], type=np.float64),
+    laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[1], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[2], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[3], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[4], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[5], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[6], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[7], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[8], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[9], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[10], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[11], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[12], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[13], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[14], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[15], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[16], type=data_type),
     ])
     return "dims added"
 
@@ -58,8 +58,9 @@ def saveLASFile(laspyLASObject, dim_name, numpyArray, output_las_path):
     :return: None
     """
     print(f"Writing LAS file to {output_las_path}")
+    data_type = np.float32
     #adding metadata to LAS
-    laspyLASObject.add_extra_dim(laspy.ExtraBytesParams(name=dim_name, type=np.float64))
+    laspyLASObject.add_extra_dim(laspy.ExtraBytesParams(name=dim_name, type=data_type))
     #write the calculated data onto the las file then onto disk
     laspyLASObject[dim_name] = numpyArray
     laspyLASObject.write(output_las_path)
@@ -387,25 +388,33 @@ def compute_verticality(points):
     printTimeElapsed(dim_name, round((end-start)/60,2))
     return dim_name, np.array(verticality_values)
 #translation
-def translate_coords(numpy_coords_array):
+def translate_coords(numpy_coords_array, offsets=None):
     """
-    Translates array to make computations easier
-    :param array: NumPy array of shape (N, 3) representing the point cloud.
+    Translates array to make computations faster with given offsets, if offsets are not provided
+    the common base 1000 is found.
+    :param array: NumPy array of shape (N, 4) representing the point cloud and normal z.
+    :param offsets: tuple from las header (<las>.header.offsets) representing the offsets
     :return: A NumPy array of with translated coordinates.
     """
     X = numpy_coords_array[:,0]
     Y = numpy_coords_array[:,1]
     Z = numpy_coords_array[:,2]
     NZ = numpy_coords_array[:,3]
-    baseX = X[0] // 1000
-    baseY = Y[0] // 1000   # Find the base of the first element
-    bases_x = set(map(lambda x: x // 100000, X))
-    #bases_y = set(map(lambda x: x // 100000, Y))
-    if len(bases_x) == 1:
-        offset = (baseX*1000,baseY*1000)
-        point_coords = np.vstack((X - offset[0], Y - offset[1], Z, NZ)).transpose()
-        print(f"""\nTranslated with {offset}\ne.g for X {X[0]} - {offset[0]} -> {round(X[0] - offset[0],2)}\nand for Y {Y[0]} - {offset[1]} -> {round(Y[0] - offset[1],2)}\n""")
-        return point_coords
+    if type(offsets) is np.ndarray:
+        point_coords = np.vstack((X - offsets[0], Y - offsets[1], Z, NZ)).transpose()
+        note = "with header offsets"
+    else:
+        # Find the base of the first element
+        baseX = X[0] // 1000
+        baseY = Y[0] // 1000   
+        bases_x = set(map(lambda x: x // 100000, X))
+        #check if they all have the same base
+        if len(bases_x) == 1:
+            offsets = (baseX*1000, baseY*1000)
+            point_coords = np.vstack((X - offsets[0], Y - offsets[1], Z, NZ)).transpose()
+            note = "with calculated offsets"
+    print(f"""\nTranslated {note} {offsets}\ne.g for X {X[0]} - {offsets[0]} -> {round(X[0] - offsets[0],2)}\nand for Y {Y[0]} - {offsets[1]} -> {round(Y[0] - offsets[1],2)}\n""")
+    return point_coords
 
 #print table
 def printTimeElapsed(title,time):
