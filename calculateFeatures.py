@@ -4,6 +4,8 @@ import colorsys
 import pandas as pd
 import laspy
 import geometricFeatures
+import os
+
 decimal_digits = 8
 
 
@@ -64,43 +66,27 @@ def rgb_to_hsv(colors_array):
     return np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_array]),decimals=2)
 #np.mean(colorsofneighbors, axis=0) for average of the colors
 
-def save_as_LAS(df, reference_LAS,radius):
+def save_as_LAS(df,reference_LAS,radius,output_file, RF_array, GBT_array):
+    output_file = f"{output_file}_{radius}.las"
+    output_file_path = os.path.join("working",output_file)
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
     header.scales = reference_LAS.header.scales
     radius = str(0.5)
-    header.add_extra_dim(laspy.ExtraBytesParams(name="RF", type=np.int32))
-    header.add_extra_dim(laspy.ExtraBytesParams(name="GBT", type=np.int32))
-    
-    rgb_non_normalised = np.vstack((las.red,las.green,las.blue)).transpose() * 65535.0 
+    header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF_{radius}", type=np.float32))
+    header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT_{radius}", type=np.float32))
+    #retrieve color info from las file
+    rgb_non_normalised = np.vstack((reference_LAS.red,reference_LAS.green,reference_LAS.blue)).transpose() * 65535.0 
     # Create a LasWriter and a point record, then write it
-    with laspy.open("../working/car_training/write_testing.las", mode="w", header=header) as writer:
-        point_record = laspy.ScaleAwarePointRecord.zeros(translated_coords.shape[0], header=header)
-        point_record.x = translated_coords[:, 0] + header.offsets[0]
-        point_record.y = translated_coords[:, 1] + header.offsets[1]
-        point_record.z = translated_coords[:, 2]
+    with laspy.open(output_file_path, mode="w", header=header) as writer:
+        point_record = laspy.ScaleAwarePointRecord.zeros(rgb_non_normalised.shape[0], header=header)
+        point_record.x = np.array(df['X'] + header.offsets[0])
+        point_record.y = np.array(df['Y'] + header.offsets[1])
+        point_record.z = np.array(df['Z'])
         point_record.red = rgb_non_normalised[:, 0]
         point_record.green = rgb_non_normalised[:, 1]
         point_record.blue = rgb_non_normalised[:, 2]
-        point_record.Verticality = verticalityList
+        point_record.RF = RF_array
+        point_record.GBT = GBT_array
         writer.write_points(point_record)
-
-
-    las_version = reference_LAS.header.version
-    point_format = reference_LAS.header.point_format
-
-    new_las = laspy.create(point_format=point_format, file_version=las_version)
-
-    new_las.x = np.array(df['X']+667000.0) #add translation
-    new_las.y = np.array(df['Y']+650000.0)
-    new_las.z = np.array(df['Z'])
-    #fix
-    new_las.red = np.array(reference_LAS.red)
-    new_las.green = np.array(reference_LAS.green)
-    new_las.blue = np.array(reference_LAS.blue)
-    new_las.classification = np.array(df['classification'])
-    new_las.add_extra_dim(laspy.ExtraBytesParams(name='omnivariance', type=np.float64))
-    geometricFeatures.addDimsToLAS(las,radius)
-    new_las.omnivariance = np.array(df['omnivariance'])
-    new_las.write('../working/car_training/car.las')
