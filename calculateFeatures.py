@@ -9,6 +9,23 @@ import os
 decimal_digits = 8
 
 
+def grid_subsampling(points, voxel_size):
+    #Poux F.
+    nb_vox=np.ceil((np.max(points, axis=0) - np.min(points, axis=0))/voxel_size)
+    non_empty_voxel_keys, inverse, nb_pts_per_voxel= np.unique(((points - np.min(points, axis=0)) // voxel_size).astype(int), axis=0, return_inverse=True, return_counts=True)
+    idx_pts_vox_sorted=np.argsort(inverse)
+    voxel_grid={}
+    grid_barycenter,grid_candidate_center=[],[]
+    last_seen=0
+
+    for idx,vox in enumerate(non_empty_voxel_keys):
+        voxel_grid[tuple(vox)]=points[idx_pts_vox_sorted[last_seen:last_seen+nb_pts_per_voxel[idx]]]
+        grid_barycenter.append(np.mean(voxel_grid[tuple(vox)],axis=0))
+        grid_candidate_center.append(voxel_grid[tuple(vox)][np.linalg.norm(voxel_grid[tuple(vox)]-np.mean(voxel_grid[tuple(vox)],axis=0),axis=1).argmin()])
+        last_seen+=nb_pts_per_voxel[idx]
+    data_array = np.array(grid_barycenter)
+    return data_array
+
 def compute_covariance_matrix(neighbors):
     return np.round(np.cov(neighbors.T),decimals=decimal_digits)
 
@@ -68,7 +85,7 @@ def rgb_to_hsv(colors_array):
 
 def save_as_LAS(df,reference_LAS,radius,output_file, RF_array, GBT_array):
     output_file = f"{output_file}_{radius}.las"
-    output_file_path = os.path.join("working",output_file)
+    output_file_path = os.path.join("../working",output_file)
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
@@ -81,12 +98,15 @@ def save_as_LAS(df,reference_LAS,radius,output_file, RF_array, GBT_array):
     # Create a LasWriter and a point record, then write it
     with laspy.open(output_file_path, mode="w", header=header) as writer:
         point_record = laspy.ScaleAwarePointRecord.zeros(rgb_non_normalised.shape[0], header=header)
-        point_record.x = np.array(df['X'] + header.offsets[0])
-        point_record.y = np.array(df['Y'] + header.offsets[1])
-        point_record.z = np.array(df['Z'])
-        point_record.red = rgb_non_normalised[:, 0]
-        point_record.green = rgb_non_normalised[:, 1]
-        point_record.blue = rgb_non_normalised[:, 2]
+        # point_record.x = np.array(df['X'] + header.offsets[0])
+        # point_record.y = np.array(df['Y'] + header.offsets[1])
+        # point_record.z = np.array(df['Z'])
+        point_record.x = df.get('X')
+        point_record.y = df.get('Y')
+        point_record.z = df.get('Z')
+        #point_record.red = rgb_non_normalised[:, 0]
+        #point_record.green = rgb_non_normalised[:, 1]
+        #point_record.blue = rgb_non_normalised[:, 2]
         point_record.RF = RF_array
         point_record.GBT = GBT_array
         writer.write_points(point_record)
