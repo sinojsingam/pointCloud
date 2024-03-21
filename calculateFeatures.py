@@ -6,6 +6,9 @@ import laspy
 import geometricFeatures
 import os
 from scipy.spatial import cKDTree
+from sklearn.neighbors import NearestNeighbors
+import cv2
+
 
 decimal_digits = 8
 
@@ -110,21 +113,21 @@ def rgb_to_hsv(colors_array):
     return np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_array]),decimals=2)
 #np.mean(colorsofneighbors, axis=0) for average of the colors
 
-def saveDF_as_LAS(df,reference_LAS,radius,output_file, RF_array, GBT_array):
+def saveDF_as_LAS(df,reference_LAS,radius,output_file):
     output_file = f"{output_file}_{radius}.las"
-    output_file_path = os.path.join("../working",output_file)
+    output_file_path = os.path.join("../results",output_file)
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
     header.scales = reference_LAS.header.scales
     radius = str(0.5)
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF_{radius}", type=np.float32))
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT_{radius}", type=np.float32))
+    header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF", type=np.float32))
+    header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT", type=np.float32))
     #retrieve color info from las file
     rgb_non_normalised = np.vstack((reference_LAS.red,reference_LAS.green,reference_LAS.blue)).transpose() * 65535.0 
     # Create a LasWriter and a point record, then write it
     with laspy.open(output_file_path, mode="w", header=header) as writer:
-        point_record = laspy.ScaleAwarePointRecord.zeros(rgb_non_normalised.shape[0], header=header)
+        point_record = laspy.ScaleAwarePointRecord.zeros(df.shape[0], header=header)
         # point_record.x = np.array(df['X'] + header.offsets[0])
         # point_record.y = np.array(df['Y'] + header.offsets[1])
         # point_record.z = np.array(df['Z'])
@@ -134,8 +137,8 @@ def saveDF_as_LAS(df,reference_LAS,radius,output_file, RF_array, GBT_array):
         #point_record.red = rgb_non_normalised[:, 0]
         #point_record.green = rgb_non_normalised[:, 1]
         #point_record.blue = rgb_non_normalised[:, 2]
-        point_record.RF = RF_array
-        point_record.GBT = GBT_array
+        point_record.RF = df.get('predictions_RF')
+        point_record.GBT = df.get('predictions_GBT')
         writer.write_points(point_record)
 
 def saveNP_as_LAS(data_to_save,reference_LAS,output_file):
