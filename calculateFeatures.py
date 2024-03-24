@@ -263,7 +263,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
             cov_matrix = compute_covariance_matrix(neighbors[:, :3]).astype(data_type)
             eigenvalues = compute_eigenvalues(cov_matrix)
-            sum_eigenvalues = np.sum(eigenvalues)
+            sum_eigenvalues = np.sum(eigenvalues) + 0.001
             #normalise eigenvalues
             lambda_1 = eigenvalues[0] / sum_eigenvalues
             lambda_2 = eigenvalues[1] / sum_eigenvalues
