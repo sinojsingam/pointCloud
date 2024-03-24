@@ -56,22 +56,23 @@ def getRadii_voxelSizes(scales=10,smallest_radius=0.1, growth_factor=2, density=
     return r_scales, grid_sizes
 
 def compute_covariance_matrix(neighbors):
-    return np.cov(neighbors.T).astype(np.float32)
+    return np.cov(neighbors.T)
 
 def compute_eigenvalues(covariance_matrix):
     eigenvalues, _ = eigh(covariance_matrix) #it gives eigen values and vectors as tuple
-    return np.flip(np.sort(eigenvalues)).astype(np.float32) #l1>l2>l3
+    return np.flip(np.sort(eigenvalues)) #l1>l2>l3
 
-def compute_omnivariance(eigenvalues):
-    array = np.cbrt(np.prod(eigenvalues)).astype(np.float32)
+def compute_omnivariance(lambda_1, lambda_2, lambda_3):
+    #array = np.cbrt(np.prod(eigenvalues))
+    array = np.cbrt(lambda_1 * lambda_2 * lambda_3)
     return array
 
-def compute_eigenentropy(eigenvalues):
+def compute_eigenentropy(eigenvalues, lambda_1, lambda_2, lambda_3):
     eigenvalues = eigenvalues[eigenvalues > 0]
     if eigenvalues.size == 0:  # Check if all eigenvalues were filtered out
         return 0
     else:
-        array = -np.sum(eigenvalues * np.log(eigenvalues)).astype(np.float32)
+        array = -(lambda_1*np.log(lambda_1) + lambda_2*np.log(lambda_2) + lambda_3*np.log(lambda_3))
         return array
 
 def compute_anisotropy(lambda_1, lambda_3):
@@ -245,20 +246,20 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         neighbors = translated_3d_color[indices]
          # Need at least 4 points to compute a meaningful covariance matrix
         if len(neighbors) < 4:
-            omniList[i] = 0
-            eigenList[i] = 0
-            anisoList[i] = 0
-            linList[i] = 0
-            planarList[i] = 0
-            curveList[i] = 0
-            sphereList[i] = 0
-            heightRangeList[i] = 0
-            heightAvgList[i] = 0
-            heightBelowList[i] = 0
-            heightAboveList[i] = 0
-            neighboringHList[i] = 0
-            neighboringSList[i] = 0
-            neighboringVList[i] = 0
+            omniList[i] = np.nan
+            eigenList[i] = np.nan
+            anisoList[i] = np.nan
+            linList[i] = np.nan
+            planarList[i] = np.nan
+            curveList[i] = np.nan
+            sphereList[i] = np.nan
+            heightRangeList[i] = np.nan
+            heightAvgList[i] = np.nan
+            heightBelowList[i] = np.nan
+            heightAboveList[i] = np.nan
+            neighboringHList[i] = np.nan
+            neighboringSList[i] = np.nan
+            neighboringVList[i] = np.nan
         else:
             heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
             cov_matrix = compute_covariance_matrix(neighbors[:, :3]).astype(data_type)
@@ -269,8 +270,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             lambda_2 = eigenvalues[1] / sum_eigenvalues
             lambda_3 = eigenvalues[2] / sum_eigenvalues
             #Geometric features
-            omni = compute_omnivariance(eigenvalues)
-            eigen = compute_eigenentropy(eigenvalues)
+            omni = compute_omnivariance(lambda_1, lambda_2, lambda_3)
+            eigen = compute_eigenentropy(eigenvalues, lambda_1, lambda_2, lambda_3)
             aniso = compute_anisotropy(lambda_1, lambda_3)
             linear = compute_linearity(lambda_1, lambda_2)
             planar = compute_planarity(lambda_1, lambda_2, lambda_3)
@@ -295,7 +296,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             neighboringVList[i] = k_V
 
     #Create a dictionary with all the values
-    pointsDict = {
+    pointsDict_with_nan = {
             "X": xList,
             "Y": yList,
             "Z": zList,
@@ -319,8 +320,11 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             "neighbor_S": neighboringSList,
             "neighbor_V": neighboringVList,  
         }
+    df = pd.DataFrame(pointsDict_with_nan)
+    df = df.dropna()
+    pointsDict = df.to_dict(orient='list')
     if save:
-        ref_las = laspy.read('../working/classification/multiscale/multiscale_features.csv')
+        ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
         output_path = '../results/testing/'
         saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
     return pointsDict
