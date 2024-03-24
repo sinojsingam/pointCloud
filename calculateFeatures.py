@@ -9,7 +9,6 @@ from scipy.spatial import cKDTree
 from sklearn.neighbors import NearestNeighbors
 import cv2
 
-
 decimal_digits = 8
 
 def grid_subsampling_with_color(points, voxel_size):
@@ -57,14 +56,14 @@ def getRadii_voxelSizes(scales=10,smallest_radius=0.1, growth_factor=2, density=
     return r_scales, grid_sizes
 
 def compute_covariance_matrix(neighbors):
-    return np.round(np.cov(neighbors.T),decimals=decimal_digits)
+    return np.cov(neighbors.T).astype(np.float32)
 
 def compute_eigenvalues(covariance_matrix):
     eigenvalues, _ = eigh(covariance_matrix) #it gives eigen values and vectors as tuple
-    return np.round(np.flip(np.sort(eigenvalues)),decimals=decimal_digits) #l1>l2>l3
+    return np.flip(np.sort(eigenvalues)).astype(np.float32) #l1>l2>l3
 
 def compute_omnivariance(eigenvalues):
-    array = np.round(np.cbrt(np.prod(eigenvalues)),decimals=decimal_digits)
+    array = np.cbrt(np.prod(eigenvalues)).astype(np.float32)
     return array
 
 def compute_eigenentropy(eigenvalues):
@@ -72,7 +71,7 @@ def compute_eigenentropy(eigenvalues):
     if eigenvalues.size == 0:  # Check if all eigenvalues were filtered out
         return 0
     else:
-        array = np.round(-np.sum(eigenvalues * np.log(eigenvalues)),decimals=decimal_digits)
+        array = -np.sum(eigenvalues * np.log(eigenvalues)).astype(np.float32)
         return array
 
 def compute_anisotropy(lambda_1, lambda_3):
@@ -111,22 +110,46 @@ def compute_height(point,neighbors):
 
 def rgb_to_hsv(colors_array):
     return np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_array]),decimals=2)
-#np.mean(colorsofneighbors, axis=0) for average of the colors
+
+
+def addDimsToLAS(laspyLASObject):
+    dim_names = [f'omnivariance', #0
+                 f'eigenentropy', #1
+                 f'anisotropy', #2
+                 f'linearity', #3
+                 f'curvature', #4
+                 f'sphericity',#5
+                 f'planarity', #6
+                 f'verticality'] #7
+    
+    data_type = np.float32
+    #adding metadata to LAS
+    laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[1], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[2], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[3], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[4], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[5], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[6], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[7], type=data_type)
+                        ])
+    return "dims added"
 
 def saveDF_as_LAS(df,reference_LAS,radius,output_file):
     output_file = f"{output_file}_{radius}.las"
-    output_file_path = os.path.join("../results",output_file)
+    output_file_path = os.path.join("../results/testing",output_file)
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
     header.scales = reference_LAS.header.scales
-    radius = str(0.5)
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF", type=np.float32))
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT", type=np.float32))
+    # header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF", type=np.float32))
+    # header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT", type=np.float32))
+    addDimsToLAS(header)
     #retrieve color info from las file
-    rgb_non_normalised = np.vstack((reference_LAS.red,reference_LAS.green,reference_LAS.blue)).transpose() * 65535.0 
+    # rgb_non_normalised = np.vstack((reference_LAS.red,reference_LAS.green,reference_LAS.blue)).transpose() * 65535.0 
     # Create a LasWriter and a point record, then write it
     with laspy.open(output_file_path, mode="w", header=header) as writer:
+
         point_record = laspy.ScaleAwarePointRecord.zeros(df.shape[0], header=header)
         # point_record.x = np.array(df['X'] + header.offsets[0])
         # point_record.y = np.array(df['Y'] + header.offsets[1])
@@ -134,12 +157,22 @@ def saveDF_as_LAS(df,reference_LAS,radius,output_file):
         point_record.x = df.get('X')
         point_record.y = df.get('Y')
         point_record.z = df.get('Z')
+        point_record.omnivariance = df.get('omnivariance')
+        point_record.eigenentropy = df.get('eigenentropy')
+        point_record.anisotropy = df.get('anisotropy')
+        point_record.linearity = df.get('linearity')
+        point_record.planarity = df.get('planarity')
+        point_record.curvature = df.get('curvature')
+        point_record.sphericity = df.get('sphericity')
+        point_record.verticality = df.get('verticality')
         #point_record.red = rgb_non_normalised[:, 0]
         #point_record.green = rgb_non_normalised[:, 1]
         #point_record.blue = rgb_non_normalised[:, 2]
-        point_record.RF = df.get('predictions_RF')
-        point_record.GBT = df.get('predictions_GBT')
+        # point_record.RF = df.get('predictions_RF')
+        # point_record.GBT = df.get('predictions_GBT')
         writer.write_points(point_record)
+
+
 
 def saveNP_as_LAS(data_to_save,reference_LAS,output_file):
     # Create a new header
@@ -169,7 +202,7 @@ def saveNP_as_LAS(data_to_save,reference_LAS,output_file):
         writer.write_points(point_record)
 
 
-def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32):
+def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32, save=False, output_file=None):
     """
     Iterates over each point and calculates the geometric features for each point and its neighbors in a spherical neighborhood.
     """
@@ -282,5 +315,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             "neighbor_S": neighboringSList,
             "neighbor_V": neighboringVList,  
         }
-    
+    if save:
+        ref_las = laspy.read('../working/classification/multiscale/multiscale_features.csv')
+        output_path = '../results/testing/'
+        saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
     return pointsDict
