@@ -6,6 +6,8 @@ import laspy
 import geometricFeatures
 import os
 from scipy.spatial import cKDTree
+from sklearn.neighbors import NearestNeighbors
+import cv2
 
 decimal_digits = 8
 
@@ -54,22 +56,23 @@ def getRadii_voxelSizes(scales=10,smallest_radius=0.1, growth_factor=2, density=
     return r_scales, grid_sizes
 
 def compute_covariance_matrix(neighbors):
-    return np.round(np.cov(neighbors.T),decimals=decimal_digits)
+    return np.cov(neighbors.T)
 
 def compute_eigenvalues(covariance_matrix):
     eigenvalues, _ = eigh(covariance_matrix) #it gives eigen values and vectors as tuple
-    return np.round(np.flip(np.sort(eigenvalues)),decimals=decimal_digits) #l1>l2>l3
+    return np.flip(np.sort(eigenvalues)) #l1>l2>l3
 
-def compute_omnivariance(eigenvalues):
-    array = np.round(np.cbrt(np.prod(eigenvalues)),decimals=decimal_digits)
+def compute_omnivariance(lambda_1, lambda_2, lambda_3):
+    #array = np.cbrt(np.prod(eigenvalues))
+    array = np.cbrt(lambda_1 * lambda_2 * lambda_3)
     return array
 
-def compute_eigenentropy(eigenvalues):
+def compute_eigenentropy(eigenvalues, lambda_1, lambda_2, lambda_3):
     eigenvalues = eigenvalues[eigenvalues > 0]
     if eigenvalues.size == 0:  # Check if all eigenvalues were filtered out
-        return 0
+        return np.nan
     else:
-        array = np.round(-np.sum(eigenvalues * np.log(eigenvalues)),decimals=decimal_digits)
+        array = -(lambda_1*np.log(lambda_1) + lambda_2*np.log(lambda_2) + lambda_3*np.log(lambda_3))
         return array
 
 def compute_anisotropy(lambda_1, lambda_3):
@@ -102,41 +105,76 @@ def compute_height(point,neighbors):
     z_neighbors = neighbors[:,2] # z of neighbors
     min, max = np.min(z_neighbors), np.max(z_neighbors)
     range = round(max - min, 2).astype(np.float32)
+    average_height = round(np.mean(z_neighbors),2).astype(np.float32)
     height_above = round(max - z_point,2).astype(np.float32)
     height_below = round(z_point - min,2).astype(np.float32)
-    return range, height_below, height_above
+    return range, average_height, height_below, height_above
 
 def rgb_to_hsv(colors_array):
     return np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_array]),decimals=2)
-#np.mean(colorsofneighbors, axis=0) for average of the colors
 
-def saveDF_as_LAS(df,reference_LAS,radius,output_file, RF_array, GBT_array):
+
+def addDimsToLAS(laspyLASObject):
+    dim_names = [f'omnivariance', #0
+                 f'eigenentropy', #1
+                 f'anisotropy', #2
+                 f'linearity', #3
+                 f'curvature', #4
+                 f'sphericity',#5
+                 f'planarity', #6
+                 f'verticality'] #7
+    
+    data_type = np.float32
+    #adding metadata to LAS
+    laspyLASObject.add_extra_dims([laspy.ExtraBytesParams(name=dim_names[0], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[1], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[2], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[3], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[4], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[5], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[6], type=data_type),
+                        laspy.ExtraBytesParams(name=dim_names[7], type=data_type)
+                        ])
+    return "dims added"
+
+def saveDF_as_LAS(df,reference_LAS,radius,output_file):
     output_file = f"{output_file}_{radius}.las"
-    output_file_path = os.path.join("../working",output_file)
+    output_file_path = os.path.join("../results/testing",output_file)
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
     header.scales = reference_LAS.header.scales
-    radius = str(0.5)
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF_{radius}", type=np.float32))
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT_{radius}", type=np.float32))
+    # header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF", type=np.float32))
+    # header.add_extra_dim(laspy.ExtraBytesParams(name=f"GBT", type=np.float32))
+    addDimsToLAS(header)
     #retrieve color info from las file
-    rgb_non_normalised = np.vstack((reference_LAS.red,reference_LAS.green,reference_LAS.blue)).transpose() * 65535.0 
+    # rgb_non_normalised = np.vstack((reference_LAS.red,reference_LAS.green,reference_LAS.blue)).transpose() * 65535.0 
     # Create a LasWriter and a point record, then write it
     with laspy.open(output_file_path, mode="w", header=header) as writer:
-        point_record = laspy.ScaleAwarePointRecord.zeros(rgb_non_normalised.shape[0], header=header)
+
+        point_record = laspy.ScaleAwarePointRecord.zeros(df.shape[0], header=header)
         # point_record.x = np.array(df['X'] + header.offsets[0])
         # point_record.y = np.array(df['Y'] + header.offsets[1])
         # point_record.z = np.array(df['Z'])
         point_record.x = df.get('X')
         point_record.y = df.get('Y')
         point_record.z = df.get('Z')
+        point_record.omnivariance = df.get('omnivariance')
+        point_record.eigenentropy = df.get('eigenentropy')
+        point_record.anisotropy = df.get('anisotropy')
+        point_record.linearity = df.get('linearity')
+        point_record.planarity = df.get('planarity')
+        point_record.curvature = df.get('curvature')
+        point_record.sphericity = df.get('sphericity')
+        point_record.verticality = df.get('verticality')
         #point_record.red = rgb_non_normalised[:, 0]
         #point_record.green = rgb_non_normalised[:, 1]
         #point_record.blue = rgb_non_normalised[:, 2]
-        point_record.RF = RF_array
-        point_record.GBT = GBT_array
+        # point_record.RF = df.get('predictions_RF')
+        # point_record.GBT = df.get('predictions_GBT')
         writer.write_points(point_record)
+
+
 
 def saveNP_as_LAS(data_to_save,reference_LAS,output_file):
     # Create a new header
@@ -166,7 +204,7 @@ def saveNP_as_LAS(data_to_save,reference_LAS,output_file):
         writer.write_points(point_record)
 
 
-def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32):
+def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32, save=False, output_file=None):
     """
     Iterates over each point and calculates the geometric features for each point and its neighbors in a spherical neighborhood.
     """
@@ -185,6 +223,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
     curveList = np.zeros(pc_length, dtype=data_type)
     sphereList = np.zeros(pc_length, dtype=data_type)
     heightRangeList = np.zeros(pc_length, dtype=data_type)
+    heightAvgList = np.zeros(pc_length, dtype=data_type)
     heightBelowList = np.zeros(pc_length, dtype=data_type)
     heightAboveList = np.zeros(pc_length, dtype=data_type)
     neighboringHList = np.zeros(pc_length, dtype=data_type)
@@ -207,31 +246,32 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         neighbors = translated_3d_color[indices]
          # Need at least 4 points to compute a meaningful covariance matrix
         if len(neighbors) < 4:
-            omniList[i] = 0
-            eigenList[i] = 0
-            anisoList[i] = 0
-            linList[i] = 0
-            planarList[i] = 0
-            curveList[i] = 0
-            sphereList[i] = 0
-            heightRangeList[i] = 0
-            heightBelowList[i] = 0
-            heightAboveList[i] = 0
-            neighboringHList[i] = 0
-            neighboringSList[i] = 0
-            neighboringVList[i] = 0
+            omniList[i] = np.nan
+            eigenList[i] = np.nan
+            anisoList[i] = np.nan
+            linList[i] = np.nan
+            planarList[i] = np.nan
+            curveList[i] = np.nan
+            sphereList[i] = np.nan
+            heightRangeList[i] = np.nan
+            heightAvgList[i] = np.nan
+            heightBelowList[i] = np.nan
+            heightAboveList[i] = np.nan
+            neighboringHList[i] = np.nan
+            neighboringSList[i] = np.nan
+            neighboringVList[i] = np.nan
         else:
-            heightRange, heightBelow, heightAbove = compute_height(point, neighbors)
+            heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
             cov_matrix = compute_covariance_matrix(neighbors[:, :3]).astype(data_type)
             eigenvalues = compute_eigenvalues(cov_matrix)
-            sum_eigenvalues = np.sum(eigenvalues)
+            sum_eigenvalues = np.sum(eigenvalues) + 0.001
             #normalise eigenvalues
             lambda_1 = eigenvalues[0] / sum_eigenvalues
             lambda_2 = eigenvalues[1] / sum_eigenvalues
             lambda_3 = eigenvalues[2] / sum_eigenvalues
             #Geometric features
-            omni = compute_omnivariance(eigenvalues)
-            eigen = compute_eigenentropy(eigenvalues)
+            omni = compute_omnivariance(lambda_1, lambda_2, lambda_3)
+            eigen = compute_eigenentropy(eigenvalues, lambda_1, lambda_2, lambda_3)
             aniso = compute_anisotropy(lambda_1, lambda_3)
             linear = compute_linearity(lambda_1, lambda_2)
             planar = compute_planarity(lambda_1, lambda_2, lambda_3)
@@ -248,6 +288,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             curveList[i] = curve
             sphereList[i] = sphere
             heightRangeList[i] = heightRange
+            heightAvgList[i] = average_height
             heightBelowList[i] = heightBelow
             heightAboveList[i] = heightAbove
             neighboringHList[i] = k_H
@@ -255,7 +296,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             neighboringVList[i] = k_V
 
     #Create a dictionary with all the values
-    pointsDict = {
+    pointsDict_with_nan = {
             "X": xList,
             "Y": yList,
             "Z": zList,
@@ -279,5 +320,11 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             "neighbor_S": neighboringSList,
             "neighbor_V": neighboringVList,  
         }
-    
+    df = pd.DataFrame(pointsDict_with_nan)
+    df = df.dropna()
+    pointsDict = df.to_dict(orient='list')
+    if save:
+        ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
+        output_path = '../results/testing/'
+        saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
     return pointsDict
