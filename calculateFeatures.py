@@ -70,7 +70,7 @@ def compute_omnivariance(lambda_1, lambda_2, lambda_3):
 def compute_eigenentropy(eigenvalues, lambda_1, lambda_2, lambda_3):
     eigenvalues = eigenvalues[eigenvalues > 0]
     if eigenvalues.size == 0:  # Check if all eigenvalues were filtered out
-        return 0
+        return np.nan
     else:
         array = -(lambda_1*np.log(lambda_1) + lambda_2*np.log(lambda_2) + lambda_3*np.log(lambda_3))
         return array
