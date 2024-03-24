@@ -104,9 +104,10 @@ def compute_height(point,neighbors):
     z_neighbors = neighbors[:,2] # z of neighbors
     min, max = np.min(z_neighbors), np.max(z_neighbors)
     range = round(max - min, 2).astype(np.float32)
+    average_height = round(np.mean(z_neighbors),2).astype(np.float32)
     height_above = round(max - z_point,2).astype(np.float32)
     height_below = round(z_point - min,2).astype(np.float32)
-    return range, height_below, height_above
+    return range, average_height, height_below, height_above
 
 def rgb_to_hsv(colors_array):
     return np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_array]),decimals=2)
@@ -221,6 +222,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
     curveList = np.zeros(pc_length, dtype=data_type)
     sphereList = np.zeros(pc_length, dtype=data_type)
     heightRangeList = np.zeros(pc_length, dtype=data_type)
+    heightAvgList = np.zeros(pc_length, dtype=data_type)
     heightBelowList = np.zeros(pc_length, dtype=data_type)
     heightAboveList = np.zeros(pc_length, dtype=data_type)
     neighboringHList = np.zeros(pc_length, dtype=data_type)
@@ -251,13 +253,14 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             curveList[i] = 0
             sphereList[i] = 0
             heightRangeList[i] = 0
+            heightAvgList[i] = 0
             heightBelowList[i] = 0
             heightAboveList[i] = 0
             neighboringHList[i] = 0
             neighboringSList[i] = 0
             neighboringVList[i] = 0
         else:
-            heightRange, heightBelow, heightAbove = compute_height(point, neighbors)
+            heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
             cov_matrix = compute_covariance_matrix(neighbors[:, :3]).astype(data_type)
             eigenvalues = compute_eigenvalues(cov_matrix)
             sum_eigenvalues = np.sum(eigenvalues)
@@ -284,6 +287,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             curveList[i] = curve
             sphereList[i] = sphere
             heightRangeList[i] = heightRange
+            heightAvgList[i] = average_height
             heightBelowList[i] = heightBelow
             heightAboveList[i] = heightAbove
             neighboringHList[i] = k_H
