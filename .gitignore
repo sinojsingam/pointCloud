@@ -6,3 +6,5 @@ __pycache__/
 sendGridCreds.py
 sendgrid.env
 cpp/
+*.job
+slurm*
