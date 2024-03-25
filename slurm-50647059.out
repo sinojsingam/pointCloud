@@ -1,0 +1,35 @@
+df_classify.py:68: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  lln_copy['predictions_RF'] = predictions_RF
+df_classify.py:69: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  lln_copy['predictions_GBT'] = predictions_GBT
+Reading...
+Read in 0.02 mins. Now training...
+Feature Importances:
+[0.09340191 0.04914999 0.03287228 0.03078153 0.02957811 0.03040628
+ 0.03470894 0.03028998 0.03632756 0.10627123 0.15944858 0.04313458
+ 0.07055295 0.17802401 0.07505207]
+Trained in 26.92 mins. Now predicting...
+Predicted in 0.09 mins. Now writing...
+==========
+RF accuracy: 0.8961879212786582
+----------
+GBT accuracy: 0.867219729930792
+==========
+
+Writing took 0.01 mins. 
+Classification without color data is done.
+
+The whole process elapsed 0.45 hours.
+
+Classified LAS file saved in ./results/lln_classified.las.
+Goodbye
+
+Email sent to sinoj.singam@gmail.com. Status code: 202
