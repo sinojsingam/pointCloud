@@ -6,9 +6,9 @@ if __name__ == '__main__':
 
     # Load the point cloud data
 
-    input_path = '../working/classification/multiscale/'
-    dataname = 'classified_sample.las'
-    point_cloud = lp.read(input_path+dataname)
+    # input_path = '../working/classification/multiscale/'
+    # dataname = 'classified_sample.las'
+    point_cloud = lp.read('../working/isolated_features/building_training.las')
     points = np.vstack((point_cloud.x, 
                         point_cloud.y,
                         point_cloud.z,
@@ -18,4 +18,4 @@ if __name__ == '__main__':
                         point_cloud.green,
                         point_cloud.blue)).transpose()
     # colors = np.vstack((point_cloud.red, point_cloud.green,point_cloud.blue)).transpose()
-    calculateFeatures.calculateGeometricFeatures(points,0.5,save=True,output_file='TEST1_geomFeat.las')
+    calculateFeatures.calculateGeometricFeatures(points,0.5,save=True,output_file='TEST1_geomFeat.las',ref_las=point_cloud)
