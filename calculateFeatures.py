@@ -3,13 +3,29 @@ from numpy.linalg import eigh
 import colorsys
 import pandas as pd
 import laspy
-import geometricFeatures
-import os
 from scipy.spatial import cKDTree
-from sklearn.neighbors import NearestNeighbors
-import cv2
 
 decimal_digits = 8
+
+def print_progress(iteration, total, prefix='Progress', suffix='Complete', decimals=1, length=50, fill='█'):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = '\r')
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
 
 def grid_subsampling_with_color(points, voxel_size):
     #Poux F.
@@ -46,15 +62,14 @@ def grid_subsampling(points, voxel_size):
     return data_array
 
 def getRadii_voxelSizes(scales=10,smallest_radius=0.1, growth_factor=2, density=5):
-    r_scales = []
-    grid_sizes = []
+    scale_tuples= []
     for s in range(scales):
         r_s = smallest_radius * (growth_factor)**s
         grid_size = r_s/density
-        grid_sizes.append(grid_size)
-        r_scales.append(r_s)
-    print(f"Grid sizes: {grid_sizes}\nRadii scales: {r_scales}")
-    return grid_sizes,r_scales,
+        scale_tuples.append((grid_size, r_s))
+
+    print(f"Scale tuples (grid, r): {scale_tuples}")
+    return scale_tuples
 
 def compute_covariance_matrix(neighbors):
     return np.cov(neighbors.T)
@@ -162,8 +177,7 @@ def addDimsToLAS(laspyLASObject):
                         ])
     return "dims added"
 
-def saveDF_as_LAS(df,reference_LAS,radius,output_file):
-    output_file = f"{output_file}_{radius}.las"
+def saveDF_as_LAS(df,reference_LAS,output_file):
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
@@ -309,7 +323,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             
             #Geometric features
             omni = compute_omnivariance(lambda_1, lambda_2, lambda_3)
-            eigen = compute_eigenentropy(eigenvalues, lambda_1, lambda_2, lambda_3)
+            eigen = compute_eigenentropy(lambda_1, lambda_2, lambda_3)
             aniso = compute_anisotropy(lambda_1, lambda_3)
             linear = compute_linearity(lambda_1, lambda_2)
             planar = compute_planarity(lambda_1, lambda_2, lambda_3)
@@ -340,6 +354,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             first_order_second_vectorList[i] = first_order_second_vector
             second_order_first_vectorList[i] = second_order_first_vector
             second_order_second_vectorList[i] = second_order_second_vector
+        print_progress(i + 1, pc_length)
 
     #Create a dictionary with all the values
     pointsDict_with_nan = {
@@ -364,12 +379,14 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             "second_order_first_vector": second_order_first_vectorList,
             "second_order_second_vector": second_order_second_vectorList,
             "height_range":heightRangeList,
+            "height_avg": heightAvgList,
             "height_below": heightBelowList,
             "height_above": heightAboveList,
             "neighbor_H": neighboringHList,
             "neighbor_S": neighboringSList,
             "neighbor_V": neighboringVList
         }
+        
     df = pd.DataFrame(pointsDict_with_nan)
     df = df.dropna()
     pointsDict = df.to_dict(orient='list')
