@@ -391,8 +391,11 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
     df = df.dropna()
     pointsDict = df.to_dict(orient='list')
     if save:
-        if ref_las is None:
-            ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
         output_path = '../results/testing/'
-        saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
+        if ref_las is None:
+            df = df.astype('float32')
+            df.to_csv(f"{output_file}_{neighborhood_radius}.csv", index=False)
+        else:
+            ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
+            saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
     return pointsDict
