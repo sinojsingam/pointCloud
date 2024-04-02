@@ -8,9 +8,9 @@ if __name__ == '__main__':
     import send_email
     import time
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.ensemble import GradientBoostingClassifier
-    from sklearn.metrics import accuracy_score
+    from sklearn import svm
     from sklearn.model_selection import train_test_split
+    from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
     
     start_read = time.time()
     
@@ -20,7 +20,12 @@ if __name__ == '__main__':
     path_nonC_3 = "../working/chunks/features_2_0.csv"
     #classified point cloud path
     input_path = '../working/classification/multiscale/classified_sample.las'
-
+    #output path for the classified point cloud
+    output_path = '../working/classification/multiscale/classified_points.csv'
+    #output path for the error report
+    outputErrorRF = '../working/classification/multiscale/error_report_RF.txt'
+    outputErrorSVM = '../working/classification/multiscale/error_report_SVM.txt'
+    
     #read the pre-calculated features for the non-classified area
     nonC_features_s1 = pd.read_csv(path_nonC_1)
     nonC_features_s2 = pd.read_csv(path_nonC_2)
@@ -126,22 +131,48 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
     #machine learning models
     rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-    gbt_model = GradientBoostingClassifier(n_estimators=300, learning_rate=0.2,max_depth=3, random_state=0)
+    svm_model = svm.SVC()
+    #gbt_model = GradientBoostingClassifier(n_estimators=300, learning_rate=0.2,max_depth=3, random_state=0)
     #Train the models
     rf_model.fit(X_train, y_train)
-    gbt_model.fit(X_train, y_train)
+    svm_model.fit(X_train, y_train)
     #Evaluate model
     y_pred_rf = rf_model.predict(X_test)
-    y_pred_gbt = gbt_model.predict(X_test)
+
+    y_pred_svm = svm_model.predict(X_test)
     #Predict the non-classified area
     predictions_RF = rf_model.predict(nonC_features)
-    predictions_GBT = gbt_model.predict(nonC_features)
+    predictions_SVM = svm_model.predict(nonC_features)
+    # RF model report
+    report_RF = classification_report(y_test, y_pred_rf)
+    matrix_RF = confusion_matrix(y_test, y_pred_rf)
+    accuracy_RF = accuracy_score(y_test, y_pred_rf)
+    #write the results to a file
+    with open(outputErrorRF, 'w') as f:
+        f.write('Classification Report for Random Forests:\n')
+        f.write(report_RF)
+        f.write('\nConfusion Matrix:\n')
+        f.write(str(matrix_RF))
+        f.write(f'\nAccuracy: {accuracy_RF * 100:.2f}%')
+
+    # SVM model report
+    report_svm = classification_report(y_test, y_pred_svm)
+    matrix_svm = confusion_matrix(y_test, y_pred_svm)
+    accuracy_svm = accuracy_score(y_test, y_pred_svm)
+    #write the results to a file
+    with open(outputErrorSVM, 'w') as f:
+        f.write('Classification Report for SVM:\n')
+        f.write(report_svm)
+        f.write('\nConfusion Matrix:\n')
+        f.write(str(matrix_svm))
+        f.write(f'\nAccuracy: {accuracy_svm * 100:.2f}%')
     
-    output_csv = np.vstack((nonC_features_s1.get('X'),nonC_features_s1.get('Y'),nonC_features_s1.get('Z'),predictions_RF,predictions_GBT)).T
-    np.savetxt('../working/classification/multiscale/classified_points.csv',output_csv,delimiter=',',header='X,Y,Z,RF,GBT',comments='')
+    output_csv = np.vstack((nonC_features_s1.get('X'),nonC_features_s1.get('Y'),nonC_features_s1.get('Z'),predictions_RF,predictions_SVM)).T
+    np.savetxt(output_path,output_csv,delimiter=',',header='X,Y,Z,RF,GBT',comments='')
 
     done_time = time.time()
-    # #add mailme to CLI and get an email notification sent when scipt is done
+
+    #Add mailme to CLI and get an email notification sent when scipt is done
     try:
         if len(sys.argv) >1:
             if sys.argv[1]=='mailme':
@@ -149,4 +180,3 @@ if __name__ == '__main__':
                                             \nThe whole process elapsed {(done_time - start_read)/3600} hours""")
     except:
         print("mail was not send, due to API key error")
-
