@@ -15,17 +15,21 @@ if __name__ == '__main__':
     start_read = time.time()
     
     #Paths for the pre-calculated features for the nonclassified area at 0.5, 1, 2 spherical neighborhood
+    #CSV files
     path_nonC_1 = "../working/chunks/features_0_5.csv"
     path_nonC_2 = "../working/chunks/features_1_0.csv"
     path_nonC_3 = "../working/chunks/features_2_0.csv"
     #classified point cloud path
+    #LAS file
     input_path = '../working/classification/multiscale/classified_sample.las'
-    #output path for the classified point cloud
+    #Output path for the classified point cloud
+    #CSV file
     output_path = '../working/classification/multiscale/classified_points.csv'
     #output path for the error report
+    #TXT files
     outputErrorRF = '../working/classification/multiscale/error_report_RF.txt'
     outputErrorSVM = '../working/classification/multiscale/error_report_SVM.txt'
-    
+
     #read the pre-calculated features for the non-classified area
     nonC_features_s1 = pd.read_csv(path_nonC_1)
     nonC_features_s2 = pd.read_csv(path_nonC_2)
