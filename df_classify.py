@@ -14,7 +14,7 @@ classified_data = pd.read_csv('../working/classification/multiscale/multiscale_f
 rest_data = pd.read_csv('../working/classification/multiscale/multi_features_nonCls.csv')
 
 
-# # Preprocessing
+# Preprocessing
 cls_df = classified_data.dropna()
 lln_df = rest_data.dropna()
 
@@ -35,8 +35,7 @@ end_read = time.time()
 print(f"Read in {round((end_read-start_read)/60,2)} mins. Now training...")
 # # Create a model
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-gbt_model = GradientBoostingClassifier(n_estimators=300, learning_rate=0.2,
-                                    max_depth=3, random_state=0)
+gbt_model = GradientBoostingClassifier(n_estimators=300, learning_rate=0.2,max_depth=3, random_state=0)
 # Train the model
 rf_model.fit(X_train, y_train)
 gbt_model.fit(X_train, y_train)
