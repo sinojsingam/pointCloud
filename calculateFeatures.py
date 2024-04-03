@@ -216,33 +216,29 @@ def saveDF_as_LAS(df,reference_LAS,output_file):
         # point_record.GBT = df.get('predictions_GBT')
         writer.write_points(point_record)
 
-def saveNP_as_LAS(data_to_save,reference_LAS,output_file):
+def saveNP_as_LAS(data_to_save,reference_LAS,output_file,RF_array,SVM_array):
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
     header.scales = reference_LAS.header.scales
     # radius = str(0.5)
-    # header.add_extra_dim(lp.ExtraBytesParams(name=f"RF_{radius}", type=np.float32))
-    # header.add_extra_dim(lp.ExtraBytesParams(name=f"GBT_{radius}", type=np.float32))
+    header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF", type=np.float32))
+    header.add_extra_dim(laspy.ExtraBytesParams(name=f"SVM", type=np.float32))
     #retrieve color info from las file
     # rgb_non_normalised = np.vstack((point_cloud.red,point_cloud.green,point_cloud.blue)).transpose() * 65535.0 
     # Create a LasWriter and a point record, then write it
     with laspy.open(output_file, mode="w", header=header) as writer:
         point_record = laspy.ScaleAwarePointRecord.zeros(data_to_save.shape[0], header=header)
-        # point_record.x = np.array(df['X'] + header.offsets[0])
-        # point_record.y = np.array(df['Y'] + header.offsets[1])
-        # point_record.z = np.array(df['Z'])
         point_record.x = data_to_save[:, 0]
         point_record.y = data_to_save[:, 1]
         point_record.z = data_to_save[:, 2]
-        point_record['normal z'] = data_to_save[:, 3]
-        point_record.red = data_to_save[:, 4]
-        point_record.green = data_to_save[:, 5]
-        point_record.blue = data_to_save[:, 6]
-        # point_record.RF = RF_array
-        # point_record.GBT = GBT_array
+        # point_record['normal z'] = data_to_save[:, 3]
+        #point_record.red = data_to_save[:, 4]
+        #point_record.green = data_to_save[:, 5]
+        #point_record.blue = data_to_save[:, 6]
+        point_record.RF = RF_array
+        point_record.SVM = SVM_array
         writer.write_points(point_record)
-
 
 def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32, save=False, output_file=None, ref_las=None):
     """
