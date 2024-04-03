@@ -173,7 +173,7 @@ if __name__ == '__main__':
     
     output_csv = np.vstack((nonC_features_s1.get('X'),nonC_features_s1.get('Y'),nonC_features_s1.get('Z'),predictions_RF,predictions_SVM)).T
     np.savetxt(output_path,output_csv,delimiter=',',header='X,Y,Z,RF,GBT',comments='')
-
+    
     done_time = time.time()
 
     #Add mailme to CLI and get an email notification sent when scipt is done
