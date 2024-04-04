@@ -240,7 +240,7 @@ def saveNP_as_LAS(data_to_save,reference_LAS,output_file,RF_array,SVM_array):
         point_record.SVM = SVM_array
         writer.write_points(point_record)
 
-def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32, save=False, output_file=None, ref_las=None):
+def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32, loader=False, save=False, output_file=None, ref_las=None):
     """
     Iterates over each point and calculates the geometric features for each point and its neighbors in a spherical neighborhood.
     """
@@ -350,7 +350,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             first_order_second_vectorList[i] = first_order_second_vector
             second_order_first_vectorList[i] = second_order_first_vector
             second_order_second_vectorList[i] = second_order_second_vector
-        print_progress(i + 1, pc_length)
+        if loader:
+            print_progress(i + 1, pc_length)
 
     #Create a dictionary with all the values
     pointsDict_with_nan = {

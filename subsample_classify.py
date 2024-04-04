@@ -1,6 +1,5 @@
 import calculateFeatures
 import numpy as np
-import pandas as pd
 import laspy as lp
 import sys
 import send_email
@@ -11,8 +10,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 start_read = time.time()
+# Get current current time
+def get_time():
+    t = time.localtime()
+    current_time = time.strftime("%H:%M:%S", t)
+    return current_time
+
 # FILE PATHS
 #LAS files
+
+print(f'Reading LAS files... {get_time()}')
 classified_pointCloudPath = '../working/classification/multiscale/classified_sample.las'
 nonClassified_pointCloudPath = '../working/classification/multiscale/nonClassified_sample.las'
 #create output txt files
@@ -46,24 +53,29 @@ nonClassified_points_array = np.vstack((nonClassified_pointCloud.x,
 grid_sizes = [0.1, 0.2, 0.4]
 radii = [0.5, 1.0, 2.0]
 
+print(f'Subsampling classified pc... {get_time()}')
 # Subsample the data
 classified_subsampled_s1 = calculateFeatures.grid_subsampling_with_color(classified_points_array, grid_sizes[0])
 classified_subsampled_s2 = calculateFeatures.grid_subsampling_with_color(classified_points_array, grid_sizes[1])
 classified_subsampled_s3 = calculateFeatures.grid_subsampling_with_color(classified_points_array, grid_sizes[2])
 
+print(f'Subsampling nonclassified pc... {get_time()}')
 nonClassified_subsampled_s1 = calculateFeatures.grid_subsampling_with_color(nonClassified_points_array, grid_sizes[0])
 nonClassified_subsampled_s2 = calculateFeatures.grid_subsampling_with_color(nonClassified_points_array, grid_sizes[1])
 nonClassified_subsampled_s3 = calculateFeatures.grid_subsampling_with_color(nonClassified_points_array, grid_sizes[2])
 
+print(f'Calculating geometric features for classified pc... {get_time()}')
 # Calculate geometric features for both
 classified_features_s1 = calculateFeatures.calculateGeometricFeatures(classified_subsampled_s1, radii[0])
 classified_features_s2 = calculateFeatures.calculateGeometricFeatures(classified_subsampled_s2, radii[1])
 classified_features_s3 = calculateFeatures.calculateGeometricFeatures(classified_subsampled_s3, radii[2])
 
+print(f'Calculating geometric features for nonclassified pc... {get_time()}')
 nonClassified_features_s1 = calculateFeatures.calculateGeometricFeatures(nonClassified_subsampled_s1, radii[0])
 nonClassified_features_s2 = calculateFeatures.calculateGeometricFeatures(nonClassified_subsampled_s2, radii[1])
 nonClassified_features_s3 = calculateFeatures.calculateGeometricFeatures(nonClassified_subsampled_s3, radii[2])
 
+print(f'Concatenating features... {get_time()}')
 # Concatenate the features
 classified_Z = np.concatenate([classified_features_s1.get('Z'),classified_features_s2.get('Z'),classified_features_s3.get('Z')])
 classified_omnivariance = np.concatenate([classified_features_s1.get('omnivariance'),classified_features_s2.get('omnivariance'),classified_features_s3.get('omnivariance')])
@@ -85,6 +97,7 @@ classified_H_values = np.concatenate([classified_features_s1.get('H'),classified
 classified_S_values = np.concatenate([classified_features_s1.get('S'),classified_features_s2.get('S'),classified_features_s3.get('S')])
 classified_V_values = np.concatenate([classified_features_s1.get('V'),classified_features_s2.get('V'),classified_features_s3.get('V')])
 
+print(f'Concatenating features... {get_time()}')
 nonClassified_X = np.concatenate([nonClassified_features_s1.get('X'),nonClassified_features_s2.get('X'),nonClassified_features_s3.get('X')])
 nonClassified_Y = np.concatenate([nonClassified_features_s1.get('Y'),nonClassified_features_s2.get('Y'),nonClassified_features_s3.get('Y')])
 nonClassified_Z = np.concatenate([nonClassified_features_s1.get('Z'),nonClassified_features_s2.get('Z'),nonClassified_features_s3.get('Z')])
@@ -107,8 +120,8 @@ nonClassified_H_values = np.concatenate([nonClassified_features_s1.get('H'),nonC
 nonClassified_S_values = np.concatenate([nonClassified_features_s1.get('S'),nonClassified_features_s2.get('S'),nonClassified_features_s3.get('S')])
 nonClassified_V_values = np.concatenate([nonClassified_features_s1.get('V'),nonClassified_features_s2.get('V'),nonClassified_features_s3.get('V')])
 
-
 #Stack features for classification
+print(f'Stacking features... {get_time()}')
 classified_features = np.vstack((classified_omnivariance,
                     classified_eigenentropy,
                     classified_anisotropy,
@@ -158,15 +171,19 @@ X_train, X_test, y_train, y_test = train_test_split(classified_features, labels,
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
 svm_model = svm.SVC()
 # Train the models
+print(f'Training models... {get_time()}')
 rf_model.fit(X_train, y_train)
 svm_model.fit(X_train, y_train)
 # Evaluate model
+print(f'Evaluating models... {get_time()}')
 y_pred_rf = rf_model.predict(X_test)
 y_pred_svm = svm_model.predict(X_test)
 #Predict the non-classified area
+print(f'Predicting non-classified pc... {get_time()}')
 predictions_RF = rf_model.predict(nonClassified_features)
 predictions_SVM = svm_model.predict(nonClassified_features)
 # RF model report
+print(f'Writing RF classification performance to file... {get_time()}')
 report_RF = classification_report(y_test, y_pred_rf)
 matrix_RF = confusion_matrix(y_test, y_pred_rf)
 accuracy_RF = accuracy_score(y_test, y_pred_rf)
@@ -178,13 +195,13 @@ with open(outputErrorRF, 'w') as f:
     f.write('\nConfusion Matrix:\n')
     f.write(str(matrix_RF))
     f.write(f'\nAccuracy: {accuracy_RF * 100:.2f}%')
-
 # SVM model report
+print(f'Writing SVM classification performance to file... {get_time()}')
 report_svm = classification_report(y_test, y_pred_svm)
 matrix_svm = confusion_matrix(y_test, y_pred_svm)
 accuracy_svm = accuracy_score(y_test, y_pred_svm)
 
-# write the results to a file
+# Write the results to file
 with open(outputErrorSVM, 'w') as f:
     f.write('Classification Report for SVM:\n')
     f.write(report_svm)
@@ -197,11 +214,12 @@ result_output_array= np.vstack((nonClassified_X,
                                 nonClassified_Z,
                                 predictions_RF,
                                 predictions_SVM)).T
-
+print(f'Saving CSV file... {get_time()}')
 np.savetxt(output_path,result_output_array,delimiter=',',header='X,Y,Z,RF,GBT',comments='')
 
 done_time = time.time()
 try:
+    print(f'Saving classified points as LAS... {get_time()}')
     calculateFeatures.saveNP_as_LAS(result_output_array,nonClassified_pointCloud,output_path,predictions_RF,predictions_SVM)
 except Exception as e:
     print(e)
