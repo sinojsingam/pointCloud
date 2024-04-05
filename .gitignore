@@ -7,4 +7,5 @@ sendGridCreds.py
 sendgrid.env
 cpp/
 *.job
+*.out
 slurm*

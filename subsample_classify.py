@@ -18,16 +18,15 @@ def get_time():
 
 # FILE PATHS
 #LAS files
-
 print(f'Reading LAS files... {get_time()}')
-classified_pointCloudPath = '../working/classification/multiscale/classified_sample.las'
-nonClassified_pointCloudPath = '../working/classification/multiscale/nonClassified_sample.las'
+classified_pointCloudPath = None #change to las path
+nonClassified_pointCloudPath = None #change to las path
 #create output txt files
 outputErrorRF = '../results/error_RF_multi.txt'
 outputErrorSVM = '../results/error_SVM_multi.txt'
 #create output csv file
-output_path = '../results/multiscale_classified_points.csv'
-
+output_path_csv = '../results/multiscale_classified_reduced.csv'
+output_path_las = '../results/multiscale_classified_reduced.las'
 # Read LAS data
 classified_pointCloud = lp.read(classified_pointCloudPath)
 nonClassified_pointCloud = lp.read(nonClassified_pointCloudPath)
@@ -215,12 +214,12 @@ result_output_array= np.vstack((nonClassified_X,
                                 predictions_RF,
                                 predictions_SVM)).T
 print(f'Saving CSV file... {get_time()}')
-np.savetxt(output_path,result_output_array,delimiter=',',header='X,Y,Z,RF,GBT',comments='')
+np.savetxt(output_path_csv,result_output_array,delimiter=',',header='X,Y,Z,RF,GBT',comments='')
 
 done_time = time.time()
 try:
     print(f'Saving classified points as LAS... {get_time()}')
-    calculateFeatures.saveNP_as_LAS(result_output_array,nonClassified_pointCloud,output_path,predictions_RF,predictions_SVM)
+    calculateFeatures.saveNP_as_LAS(result_output_array,nonClassified_pointCloud,output_path_las,predictions_RF,predictions_SVM)
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')
