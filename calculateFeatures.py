@@ -395,4 +395,4 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         else:
             ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
             saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
-    return pointsDict
+    return pointsDict_with_nan
