@@ -86,31 +86,31 @@ def compute_omnivariance(lambda_1, lambda_2, lambda_3):
 
 def compute_eigenentropy(lambda_1, lambda_2, lambda_3):
     if lambda_1 <= 0 or lambda_2 <= 0 or lambda_3 <= 0:
-        return np.nan
+        return 0.0
     else:
     # Add the constant to the eigenvalues before taking the logarithm
         value = -( (lambda_1*np.log(lambda_1)) + (lambda_2*np.log(lambda_2)) + (lambda_3*np.log(lambda_3)))
         return np.float32(value)
 
 def compute_anisotropy(lambda_1, lambda_3):
-    value = (lambda_1 - lambda_3) / lambda_1 if lambda_1 > 0 else 0.0
+    value = (lambda_1 - lambda_3) / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_linearity(lambda_1, lambda_2):
-    value = (lambda_1 - lambda_2) / lambda_1 if lambda_1 > 0 else 0.0
+    value = (lambda_1 - lambda_2) / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_planarity(lambda_1, lambda_2, lambda_3):
-    value = (lambda_2 - lambda_3) / lambda_1 if lambda_1 > 0 else 0.0
+    value = (lambda_2 - lambda_3) / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_curvature(lambda_1, lambda_2, lambda_3):
     sum = lambda_1 + lambda_2 + lambda_3
-    value = lambda_3 / sum if sum > 0 else 0.0
+    value = lambda_3 / sum if sum > 0. else 0.0
     return np.float32(value)
 
 def compute_sphericity(lambda_1, lambda_3):
-    value =  lambda_3 / lambda_1 if lambda_1 > 0 else 0.0
+    value =  lambda_3 / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_verticality(eigenvectors):
@@ -288,25 +288,25 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         neighbors = translated_3d_color[indices]
          # Need at least 4 points to compute a meaningful covariance matrix
         if len(neighbors) < 4:
-            omniList[i] = np.nan
-            eigenList[i] = np.nan
-            anisoList[i] = np.nan
-            linList[i] = np.nan
-            planarList[i] = np.nan
-            curveList[i] = np.nan
-            sphereList[i] = np.nan
-            heightRangeList[i] = np.nan
-            heightAvgList[i] = np.nan
-            heightBelowList[i] = np.nan
-            heightAboveList[i] = np.nan
-            neighboringHList[i] = np.nan
-            neighboringSList[i] = np.nan
-            neighboringVList[i] = np.nan
-            verticalityList[i] = np.nan
-            first_order_first_vectorList[i] = np.nan
-            first_order_second_vectorList[i] = np.nan
-            second_order_first_vectorList[i] = np.nan
-            second_order_second_vectorList[i] = np.nan
+            omniList[i] = 0
+            eigenList[i] = 0
+            anisoList[i] = 0
+            linList[i] = 0
+            planarList[i] = 0
+            curveList[i] = 0
+            sphereList[i] = 0
+            heightRangeList[i] = 0
+            heightAvgList[i] = 0
+            heightBelowList[i] = 0
+            heightAboveList[i] = 0
+            neighboringHList[i] = 0
+            neighboringSList[i] = 0
+            neighboringVList[i] = 0
+            verticalityList[i] = 0
+            first_order_first_vectorList[i] = 0
+            first_order_second_vectorList[i] = 0
+            second_order_first_vectorList[i] = 0
+            second_order_second_vectorList[i] = 0
         else:
             heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
             cov_matrix = compute_covariance_matrix(neighbors[:, :3]).astype(data_type)
@@ -395,4 +395,4 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         else:
             ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
             saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
-    return pointsDict_with_nan
+    return pointsDict
