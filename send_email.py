@@ -1,7 +1,6 @@
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
-
 try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
     import sendGridCreds
 
     api_key = sendGridCreds.SENDGRID_API_KEY
@@ -34,7 +33,7 @@ try:
             print('API import worked but, something else went wrong')
             print(e.message)
 except:
-    print('API key does not exist')
+    print('send_email script did not function properly')
     
 
 

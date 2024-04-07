@@ -93,24 +93,24 @@ def compute_eigenentropy(lambda_1, lambda_2, lambda_3):
         return np.float32(value)
 
 def compute_anisotropy(lambda_1, lambda_3):
-    value = (lambda_1 - lambda_3) / lambda_1 if lambda_1 > 0 else 0.0
+    value = (lambda_1 - lambda_3) / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_linearity(lambda_1, lambda_2):
-    value = (lambda_1 - lambda_2) / lambda_1 if lambda_1 > 0 else 0.0
+    value = (lambda_1 - lambda_2) / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_planarity(lambda_1, lambda_2, lambda_3):
-    value = (lambda_2 - lambda_3) / lambda_1 if lambda_1 > 0 else 0.0
+    value = (lambda_2 - lambda_3) / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_curvature(lambda_1, lambda_2, lambda_3):
     sum = lambda_1 + lambda_2 + lambda_3
-    value = lambda_3 / sum if sum > 0 else 0.0
+    value = lambda_3 / sum if sum > 0. else 0.0
     return np.float32(value)
 
 def compute_sphericity(lambda_1, lambda_3):
-    value =  lambda_3 / lambda_1 if lambda_1 > 0 else 0.0
+    value =  lambda_3 / lambda_1 if lambda_1 > 0. else 0.0
     return np.float32(value)
 
 def compute_verticality(eigenvectors):
@@ -395,4 +395,4 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         else:
             ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
             saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
-    return pointsDict_with_nan
+    return pointsDict
