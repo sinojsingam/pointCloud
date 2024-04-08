@@ -354,37 +354,37 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
         if loader:
             print_progress(i + 1, pc_length)
     #transforms data to values between 0 and 1
-    scaler.fit_transform()
+    #scaler.fit_transform()
     #Create a dictionary with all the values
     pointsDict_with_zeros = {
-            "X": xList.reshape(-1, 1),
-            "Y": yList.reshape(-1, 1),
-            "Z": zList.reshape(-1, 1),
-            "Z_scaled": scaler.fit_transform(zList.reshape(-1, 1)),
-            "H": H_List.reshape(-1, 1),
-            "S": S_List.reshape(-1, 1),
-            "V": V_List.reshape(-1, 1),
-            "classification": (data_array[:, 4]).reshape(-1, 1),
-            "normal z": (data_array[:, 3]).reshape(-1, 1),
-            "omnivariance": omniList.reshape(-1, 1),
-            "eigenentropy": scaler.fit_transform(eigenList.reshape(-1, 1)),
-            "anisotropy": anisoList.reshape(-1, 1),
-            "linearity": linList.reshape(-1, 1),
-            "planarity": planarList.reshape(-1, 1),
-            "curvature": curveList.reshape(-1, 1),
-            "sphericity": sphereList.reshape(-1, 1),
-            "verticality": verticalityList.reshape(-1, 1),
-            "first_order_first_vector": first_order_first_vectorList.reshape(-1, 1),
-            "first_order_second_vector": first_order_second_vectorList.reshape(-1, 1),
-            "second_order_first_vector": second_order_first_vectorList.reshape(-1, 1),
-            "second_order_second_vector": second_order_second_vectorList.reshape(-1, 1),
-            "height_range":scaler.fit_transform(heightRangeList.reshape(-1, 1)),
-            "height_avg": scaler.fit_transform(heightAvgList.reshape(-1, 1)),
-            "height_below": scaler.fit_transform(heightBelowList.reshape(-1, 1)),
-            "height_above": scaler.fit_transform(heightAboveList.reshape(-1, 1)),
-            "neighbor_H": neighboringHList.reshape(-1, 1),
-            "neighbor_S": neighboringSList.reshape(-1, 1),
-            "neighbor_V": neighboringVList.reshape(-1, 1)
+            "X": xList,
+            "Y": yList,
+            "Z": zList,
+            "Z_scaled": scaler.fit_transform(zList.reshape(-1, 1)).ravel(),
+            "H": H_List,
+            "S": S_List,
+            "V": V_List,
+            "classification": (data_array[:, 4]),
+            "normal z": (data_array[:, 3]),
+            "omnivariance": omniList,
+            "eigenentropy": scaler.fit_transform(eigenList.reshape(-1, 1)).ravel(),
+            "anisotropy": anisoList,
+            "linearity": linList,
+            "planarity": planarList,
+            "curvature": curveList,
+            "sphericity": sphereList,
+            "verticality": verticalityList,
+            "first_order_first_vector": first_order_first_vectorList,
+            "first_order_second_vector": first_order_second_vectorList,
+            "second_order_first_vector": second_order_first_vectorList,
+            "second_order_second_vector": second_order_second_vectorList,
+            "height_range":scaler.fit_transform(heightRangeList.reshape(-1, 1)).ravel(),
+            "height_avg": scaler.fit_transform(heightAvgList.reshape(-1, 1)).ravel(),
+            "height_below": scaler.fit_transform(heightBelowList.reshape(-1, 1)).ravel(),
+            "height_above": scaler.fit_transform(heightAboveList.reshape(-1, 1)).ravel(),
+            "neighbor_H": neighboringHList,
+            "neighbor_S": neighboringSList,
+            "neighbor_V": neighboringVList
         }
         
     # df = pd.DataFrame(pointsDict_with_nan)
