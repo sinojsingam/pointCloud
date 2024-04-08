@@ -80,6 +80,7 @@ nonClassified_features_s3 = calculateFeatures.calculateGeometricFeatures(nonClas
 print(f'Concatenating features... {get_time()}')
 # Concatenate the features for classified
 classified_Z = np.concatenate([classified_features_s1.get('Z'),classified_features_s2.get('Z'),classified_features_s3.get('Z')])
+classified_Z_scaled = np.concatenate([classified_features_s1.get('Z_scaled'),classified_features_s2.get('Z_scaled'),classified_features_s3.get('Z_scaled')])
 classified_omnivariance = np.concatenate([classified_features_s1.get('omnivariance'),classified_features_s2.get('omnivariance'),classified_features_s3.get('omnivariance')])
 classified_eigenentropy = np.concatenate([classified_features_s1.get('eigenentropy'),classified_features_s2.get('eigenentropy'),classified_features_s3.get('eigenentropy')])
 classified_anisotropy = np.concatenate([classified_features_s1.get('anisotropy'),classified_features_s2.get('anisotropy'),classified_features_s3.get('anisotropy')])
@@ -102,6 +103,8 @@ classified_V_values = np.concatenate([classified_features_s1.get('V'),classified
 nonClassified_X = np.concatenate([nonClassified_features_s1.get('X'),nonClassified_features_s2.get('X'),nonClassified_features_s3.get('X')])
 nonClassified_Y = np.concatenate([nonClassified_features_s1.get('Y'),nonClassified_features_s2.get('Y'),nonClassified_features_s3.get('Y')])
 nonClassified_Z = np.concatenate([nonClassified_features_s1.get('Z'),nonClassified_features_s2.get('Z'),nonClassified_features_s3.get('Z')])
+nonClassified_Z_scaled = np.concatenate([nonClassified_features_s1.get('Z_scaled'),nonClassified_features_s2.get('Z_scaled'),nonClassified_features_s3.get('Z_scaled')])
+
 nonClassified_omnivariance = np.concatenate([nonClassified_features_s1.get('omnivariance'),nonClassified_features_s2.get('omnivariance'),nonClassified_features_s3.get('omnivariance')])
 nonClassified_eigenentropy = np.concatenate([nonClassified_features_s1.get('eigenentropy'),nonClassified_features_s2.get('eigenentropy'),nonClassified_features_s3.get('eigenentropy')])
 nonClassified_anisotropy = np.concatenate([nonClassified_features_s1.get('anisotropy'),nonClassified_features_s2.get('anisotropy'),nonClassified_features_s3.get('anisotropy')])
@@ -132,7 +135,7 @@ classified_features = np.vstack((
                     classified_curvature,
                     classified_sphericity,
                     classified_verticality,
-                    classified_Z,
+                    classified_Z_scaled,
                     classified_height_range,
                     classified_height_avg,
                     classified_height_below,
@@ -154,7 +157,7 @@ nonClassified_features = np.vstack((
                     nonClassified_curvature,
                     nonClassified_sphericity,
                     nonClassified_verticality,
-                    nonClassified_Z,
+                    nonClassified_Z_scaled,
                     nonClassified_height_range,
                     nonClassified_height_avg,
                     nonClassified_height_below,
@@ -241,16 +244,16 @@ print(f'Predicting non-classified pc... {get_time()}')
 send_email.sendUpdate('Predicting on unseen data. Model performance written to file.')
 predictions_RF = rf_model.predict(nonClassified_features)
 # predictions_SVM = svm_model.predict(nonClassified_features)
-result_output_array= np.vstack((nonClassified_X,
-                                nonClassified_Y,
-                                nonClassified_Z,
+result_output_array= np.vstack((nonClassified_X.ravel(),
+                                nonClassified_Y.ravel(),
+                                nonClassified_Z.ravel(),
                                 predictions_RF,
-                                nonClassified_verticality #place holder second ML values
+                                nonClassified_verticality.ravel() #place holder second ML values
                                 )).T
 
 print(f'Saving CSV file... {get_time()}')
 #write to txt file in case las write didnt work
-np.savetxt(output_path_csv,result_output_array, delimiter=',',header='X,Y,Z,RF,GBT',comments='')
+#np.savetxt(output_path_csv,result_output_array, delimiter=',',header='X,Y,Z,RF,GBT',comments='')
 
 try:
     print(f'Saving classified points as LAS... {get_time()}')
@@ -258,7 +261,7 @@ try:
                                     nonClassified_pointCloud, # Reference pc with headers
                                     output_path_las, # output path
                                     predictions_RF, # RF values
-                                    nonClassified_verticality) #place holder second ML values
+                                    nonClassified_verticality.ravel()) #place holder second ML values
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')

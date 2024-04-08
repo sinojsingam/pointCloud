@@ -4,6 +4,7 @@ import colorsys
 import pandas as pd
 import laspy
 from scipy.spatial import cKDTree
+from sklearn.preprocessing import MinMaxScaler
 
 decimal_digits = 8
 
@@ -281,7 +282,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
     H_List = colors_hsv[:, 0].astype(data_type)
     S_List = colors_hsv[:, 1].astype(data_type)
     V_List = colors_hsv[:, 2].astype(data_type)
-
+    scaler = MinMaxScaler()
     #Loops only once for all calculations according to neighbors
     for i, point in enumerate(translated_3d_color):
         indices = tree.query_ball_point(point[: 3], neighborhood_radius) #query just the coordinates XYZ coordinates and radius
@@ -352,41 +353,43 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             second_order_second_vectorList[i] = second_order_second_vector
         if loader:
             print_progress(i + 1, pc_length)
-
+    #transforms data to values between 0 and 1
+    scaler.fit_transform()
     #Create a dictionary with all the values
-    pointsDict_with_nan = {
-            "X": xList,
-            "Y": yList,
-            "Z": zList,
-            "H": H_List,
-            "S": S_List,
-            "V": V_List,
-            "classification": data_array[:, 4],
-            "normal z": data_array[:, 3],
-            "omnivariance": omniList,
-            "eigenentropy": eigenList,
-            "anisotropy": anisoList,
-            "linearity": linList,
-            "planarity": planarList,
-            "curvature": curveList,
-            "sphericity": sphereList,
-            "verticality": verticalityList,
-            "first_order_first_vector": first_order_first_vectorList,
-            "first_order_second_vector": first_order_second_vectorList,
-            "second_order_first_vector": second_order_first_vectorList,
-            "second_order_second_vector": second_order_second_vectorList,
-            "height_range":heightRangeList,
-            "height_avg": heightAvgList,
-            "height_below": heightBelowList,
-            "height_above": heightAboveList,
-            "neighbor_H": neighboringHList,
-            "neighbor_S": neighboringSList,
-            "neighbor_V": neighboringVList
+    pointsDict_with_zeros = {
+            "X": xList.reshape(-1, 1),
+            "Y": yList.reshape(-1, 1),
+            "Z": zList.reshape(-1, 1),
+            "Z_scaled": scaler.fit_transform(zList.reshape(-1, 1)),
+            "H": H_List.reshape(-1, 1),
+            "S": S_List.reshape(-1, 1),
+            "V": V_List.reshape(-1, 1),
+            "classification": (data_array[:, 4]).reshape(-1, 1),
+            "normal z": (data_array[:, 3]).reshape(-1, 1),
+            "omnivariance": omniList.reshape(-1, 1),
+            "eigenentropy": scaler.fit_transform(eigenList.reshape(-1, 1)),
+            "anisotropy": anisoList.reshape(-1, 1),
+            "linearity": linList.reshape(-1, 1),
+            "planarity": planarList.reshape(-1, 1),
+            "curvature": curveList.reshape(-1, 1),
+            "sphericity": sphereList.reshape(-1, 1),
+            "verticality": verticalityList.reshape(-1, 1),
+            "first_order_first_vector": first_order_first_vectorList.reshape(-1, 1),
+            "first_order_second_vector": first_order_second_vectorList.reshape(-1, 1),
+            "second_order_first_vector": second_order_first_vectorList.reshape(-1, 1),
+            "second_order_second_vector": second_order_second_vectorList.reshape(-1, 1),
+            "height_range":scaler.fit_transform(heightRangeList.reshape(-1, 1)),
+            "height_avg": scaler.fit_transform(heightAvgList.reshape(-1, 1)),
+            "height_below": scaler.fit_transform(heightBelowList.reshape(-1, 1)),
+            "height_above": scaler.fit_transform(heightAboveList.reshape(-1, 1)),
+            "neighbor_H": neighboringHList.reshape(-1, 1),
+            "neighbor_S": neighboringSList.reshape(-1, 1),
+            "neighbor_V": neighboringVList.reshape(-1, 1)
         }
         
-    df = pd.DataFrame(pointsDict_with_nan)
-    df = df.dropna()
-    pointsDict = df.to_dict(orient='list')
+    # df = pd.DataFrame(pointsDict_with_nan)
+    # df = df.dropna()
+    # pointsDict = df.to_dict(orient='list')
     if save:
         output_path = '../results/testing/'
         if ref_las is None:
@@ -394,5 +397,5 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             df.to_csv(f"{output_file}_{neighborhood_radius}.csv", index=False)
         else:
             ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
-            saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
-    return pointsDict
+            #saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
+    return pointsDict_with_zeros
