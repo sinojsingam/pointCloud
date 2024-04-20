@@ -9,26 +9,29 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 
+
+additional_texts = ["COL_ONLY","HEI_ONLY","COL_HEI","GEO_ONLY","GEO_COL","ROOF_FAC"] #change
+#additional_text = additional_texts[0]
+print(f"Classifying data for {additional_text}") #change
 start_read = time.time()
 # Get current current time
 def get_time():
     t = time.localtime()
     current_time = time.strftime("%H:%M:%S", t)
     return current_time
-
 # FILE PATHS
 #LAS files
 print(f'Reading LAS files... {get_time()}')
-classified_pointCloudPath = '../working/multiscale/classified_sample.las' #change
-nonClassified_pointCloudPath = '../working/multiscale/nonClassified_sample.las' #change
+classified_pointCloudPath = '../working/training/classified_area.las' #change
+nonClassified_pointCloudPath = '../working/training/lln_not_classified.las' #change
 
 #create output txt files
-outputErrorRF = '../results/reduced_error_rf_scale3.txt'
+outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
 # outputErrorSVM = '../results/error_SVM_multi_reduced_gpu_rf.txt'
 #create output csv file
-output_path_png = '../results/reduced_gpu_rf_importances.png'
-output_path_csv = '../results/reduced_gpu_rf_scale3.csv'
-output_path_las = '../results/reduced_gpu_rf_scale3.las'
+output_path_png = f'../results_final/{additional_text}/rf_importances_{additional_text}.png'
+output_path_csv = f'../results_final/{additional_text}/rf_{additional_text}.csv'
+output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
 
 # Read LAS data
 # send_email.sendUpdate('Script has begun. Reading LAS files...')
@@ -52,6 +55,9 @@ nonClassified_points_array = np.vstack((nonClassified_pointCloud.x,
                                nonClassified_pointCloud.green,
                                nonClassified_pointCloud.blue)).transpose()
 # Scales and Radii
+#Scale tuples (grid, r): [(0.04, 0.2), (0.08, 0.4), (0.16, 0.8)] #accuracy 90%
+#Scale tuples (grid, r): [(0.1, 0.5), (0.2, 1.0), (0.4, 2.0)] #accuracy 93% with 50 trees
+
 grid_sizes = [0.1, 0.2, 0.4]
 radii = [0.5, 1.0, 2.0]
 
@@ -135,11 +141,10 @@ classified_features = np.vstack((
                     classified_curvature,
                     classified_sphericity,
                     classified_verticality,
-                    classified_Z_scaled,
-                    classified_height_range,
-                    classified_height_avg,
-                    classified_height_below,
-                    classified_height_above,
+                    # classified_height_range,
+                    # classified_height_avg,
+                    # classified_height_below,
+                    # classified_height_above,
                     classified_neighbor_H,
                     classified_neighbor_S,
                     classified_neighbor_V,
@@ -157,11 +162,10 @@ nonClassified_features = np.vstack((
                     nonClassified_curvature,
                     nonClassified_sphericity,
                     nonClassified_verticality,
-                    nonClassified_Z_scaled,
-                    nonClassified_height_range,
-                    nonClassified_height_avg,
-                    nonClassified_height_below,
-                    nonClassified_height_above,
+                    # nonClassified_height_range,
+                    # nonClassified_height_avg,
+                    # nonClassified_height_below,
+                    # nonClassified_height_above,
                     nonClassified_neighbor_H,
                     nonClassified_neighbor_S,
                     nonClassified_neighbor_V,
@@ -169,18 +173,38 @@ nonClassified_features = np.vstack((
                     nonClassified_S_values,
                     nonClassified_V_values
                     )).transpose()
+features = [
+        'omnivariance',
+        'eigenentropy',
+        'anisotropy',
+        "linearity",
+        "planarity",
+        "curvature",
+        "sphericity",
+        "verticality",
+        # "height_range",
+        # "height_avg",
+        # "height_below",
+        # "height_above",
+        "neighbor_H",
+        "neighbor_S",
+        "neighbor_V",
+        "H_values",
+        "S_values",
+        "V_values"
+    ]
 # Labels
+
 labels = np.concatenate([classified_features_s1.get('classification'),classified_features_s2.get('classification'),classified_features_s3.get('classification')])
 
 #-------#
-send_email.sendUpdate('Classification has begun')
+send_email.sendUpdate(f'Classification has begun for {additional_text}')
 # Train a classifier
 X_train, X_test, y_train, y_test = train_test_split(classified_features, labels, test_size=0.2, random_state=42)
 
 # Machine learning models
-rf_model = RandomForestClassifier(max_depth=20, n_estimators=50)
+rf_model = RandomForestClassifier(n_estimators=50)
 
-#svm_model = svm.SVC()
 # Train the models
 print(f'Training models... {get_time()}')
 rf_model.fit(X_train, y_train)
@@ -197,25 +221,6 @@ report_RF = classification_report(y_test, y_pred_rf)
 matrix_RF = confusion_matrix(y_test, y_pred_rf)
 accuracy_RF = accuracy_score(y_test, y_pred_rf)
 importances = rf_model.feature_importances_
-features = ['omnivariance',
-        'eigenentropy',
-        'anisotropy',
-        "linearity",
-        "planarity",
-        "curvature",
-        "sphericity",
-        "verticality",
-        "Z values",
-        "height_range",
-        "height_avg",
-        "height_below",
-        "height_above",
-        "neighbor_H",
-        "neighbor_S",
-        "neighbor_V",
-        "H_values",
-        "S_values",
-        "V_values"]
 #Get accuracy results and write to file
 with open(outputErrorRF, 'w') as f:
     f.write('Classification Report for Random Forests:\n')
@@ -226,29 +231,16 @@ with open(outputErrorRF, 'w') as f:
     f.write('\nFeature ranking:\n')
     for f_index in range(len(features)):
         f.write(f"{features[f_index]}: {importances[f_index]}\n")
-# SVM model report
-# print(f'Writing SVM classification performance to file... {get_time()}')
-# report_svm = classification_report(y_test, y_pred_svm)
-# matrix_svm = confusion_matrix(y_test, y_pred_svm)
-# accuracy_svm = accuracy_score(y_test, y_pred_svm)
 
-# # Write the results to file
-# with open(outputErrorSVM, 'w') as f:
-#     f.write('Classification Report for SVM:\n')
-#     f.write(report_svm)
-#     f.write('\nConfusion Matrix:\n')
-#     f.write(str(matrix_svm))
-#     f.write(f'\nAccuracy: {accuracy_svm * 100:.2f}%')
 
 print(f'Predicting non-classified pc... {get_time()}')
-send_email.sendUpdate('Predicting on unseen data. Model performance written to file.')
 predictions_RF = rf_model.predict(nonClassified_features)
 # predictions_SVM = svm_model.predict(nonClassified_features)
-result_output_array= np.vstack((nonClassified_X.ravel(),
-                                nonClassified_Y.ravel(),
-                                nonClassified_Z.ravel(),
+result_output_array= np.vstack((nonClassified_X,
+                                nonClassified_Y,
+                                nonClassified_Z,
                                 predictions_RF,
-                                nonClassified_verticality.ravel() #place holder second ML values
+                                nonClassified_verticality #place holder second ML values
                                 )).T
 
 print(f'Saving CSV file... {get_time()}')
@@ -261,7 +253,7 @@ try:
                                     nonClassified_pointCloud, # Reference pc with headers
                                     output_path_las, # output path
                                     predictions_RF, # RF values
-                                    nonClassified_verticality.ravel()) #place holder second ML values
+                                    nonClassified_verticality) #place holder second ML values
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')
@@ -286,10 +278,4 @@ except:
 done_time = time.time()
 
 eval_time = round((done_time - start_read)/3600,2)
-print(f"Evaluated time: {eval_time} hours")
-# Add mailme to CLI and get an email notification sent when scipt is done
-
-if len(sys.argv) >1:
-    if sys.argv[1]=='mailme':
-        send_email.sendNotification(f"""Process finished. Classification of data is done.
-                                    \nThe whole process elapsed {eval_time} hours""")
+print(f"Evaluated time for {additional_text}: {eval_time} hours")
