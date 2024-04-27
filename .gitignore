@@ -9,3 +9,4 @@ cpp/
 *.job
 *.out
 slurm*
+scripts/

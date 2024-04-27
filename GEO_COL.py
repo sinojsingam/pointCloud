@@ -10,7 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import matplotlib.pyplot as plt
 
 
-additional_text = "GEO_COL_HEI"
+additional_text = "GEO_COL"
 print(f"Classifying data for {additional_text}") #change
 start_read = time.time()
 # Get current current time
@@ -140,11 +140,10 @@ classified_features = np.vstack((
                     classified_curvature,
                     classified_sphericity,
                     classified_verticality,
-                    classified_height_range,
-                    classified_Z_scaled,
-                    #classified_height_avg,
-                    classified_height_below,
-                    classified_height_above,
+                    # classified_height_range,
+                    # classified_height_avg,
+                    # classified_height_below,
+                    # classified_height_above,
                     classified_neighbor_H,
                     classified_neighbor_S,
                     classified_neighbor_V,
@@ -162,11 +161,10 @@ nonClassified_features = np.vstack((
                     nonClassified_curvature,
                     nonClassified_sphericity,
                     nonClassified_verticality,
-                    nonClassified_height_range,
-                    nonClassified_Z_scaled,
-                    #nonClassified_height_avg,
-                    nonClassified_height_below,
-                    nonClassified_height_above,
+                    # nonClassified_height_range,
+                    # nonClassified_height_avg,
+                    # nonClassified_height_below,
+                    # nonClassified_height_above,
                     nonClassified_neighbor_H,
                     nonClassified_neighbor_S,
                     nonClassified_neighbor_V,
@@ -183,16 +181,16 @@ features = [
         "Curvature",
         "Sphericity",
         "Verticality",
-        "Height range",
-        "Height mean",
-        "Height below",
-        "Height above",
-        "Neighbor H",
-        "Neighbor S",
-        "Neighbor V",
-        "H values",
-        "S values",
-        "V values"
+        # "height_range",
+        # "height_avg",
+        # "height_below",
+        # "height_above",
+        "neighbor_H",
+        "neighbor_S",
+        "neighbor_V",
+        "H_values",
+        "S_values",
+        "V_values"
     ]
 # Labels
 

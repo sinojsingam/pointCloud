@@ -9,8 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 
-
-additional_text = "GEO_COL_HEI"
+additional_text = "ROOF_FAC"
 print(f"Classifying data for {additional_text}") #change
 start_read = time.time()
 # Get current current time
@@ -21,8 +20,8 @@ def get_time():
 # FILE PATHS
 #LAS files
 print(f'Reading LAS files... {get_time()}')
-classified_pointCloudPath = '../working/training/classified_smaller.las' #change
-nonClassified_pointCloudPath = '../working/training/lln_not_classified.las' #change
+classified_pointCloudPath = '../working/nonGroundClassification/offGround_classified.las' #change
+nonClassified_pointCloudPath = '../working/nonGroundClassification/offGroundPoints.las' #change
 
 #create output txt files
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
@@ -141,8 +140,7 @@ classified_features = np.vstack((
                     classified_sphericity,
                     classified_verticality,
                     classified_height_range,
-                    classified_Z_scaled,
-                    #classified_height_avg,
+                    classified_height_avg,
                     classified_height_below,
                     classified_height_above,
                     classified_neighbor_H,
@@ -163,8 +161,7 @@ nonClassified_features = np.vstack((
                     nonClassified_sphericity,
                     nonClassified_verticality,
                     nonClassified_height_range,
-                    nonClassified_Z_scaled,
-                    #nonClassified_height_avg,
+                    nonClassified_height_avg,
                     nonClassified_height_below,
                     nonClassified_height_above,
                     nonClassified_neighbor_H,
@@ -175,24 +172,24 @@ nonClassified_features = np.vstack((
                     nonClassified_V_values
                     )).transpose()
 features = [
-        'Omnivariance',
-        'Eigenentropy',
-        'Anisotropy',
-        "Linearity",
-        "Planarity",
-        "Curvature",
-        "Sphericity",
-        "Verticality",
-        "Height range",
-        "Height mean",
-        "Height below",
-        "Height above",
-        "Neighbor H",
-        "Neighbor S",
-        "Neighbor V",
-        "H values",
-        "S values",
-        "V values"
+        'omnivariance',
+        'eigenentropy',
+        'anisotropy',
+        "linearity",
+        "planarity",
+        "curvature",
+        "sphericity",
+        "verticality",
+        "height_range",
+        "height_avg",
+        "height_below",
+        "height_above",
+        "neighbor_H",
+        "neighbor_S",
+        "neighbor_V",
+        "H_values",
+        "S_values",
+        "V_values"
     ]
 # Labels
 
@@ -233,7 +230,6 @@ with open(outputErrorRF, 'w') as f:
     for f_index in range(len(features)):
         f.write(f"{features[f_index]}: {importances[f_index]}\n")
 
-
 print(f'Predicting non-classified pc... {get_time()}')
 predictions_RF = rf_model.predict(nonClassified_features)
 # predictions_SVM = svm_model.predict(nonClassified_features)
@@ -266,11 +262,11 @@ try:
     sorted_dict = dict(sorted(combined_dict.items(), key=lambda item: item[1]))
     plt.clf()
     plt.figure(figsize=(10, 6))
-    plt.bar(sorted_dict.keys(), sorted_dict.values(), color='#0a9396')
+    plt.bar(sorted_dict.keys(), sorted_dict.values())
     plt.style.use('fast')
     plt.xlabel('Features')
     plt.ylabel('Importance')
-    # plt.title('Importance of features')
+    plt.title('Importance of features')
     plt.xticks(rotation=45, ha='right')
     plt.savefig(output_path_png, bbox_inches='tight')
 except:

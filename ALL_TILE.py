@@ -9,7 +9,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 
-
 additional_text = "ALL_TILE"
 print(f"Classifying data for {additional_text}") #change
 start_read = time.time()
@@ -21,7 +20,7 @@ def get_time():
 # FILE PATHS
 #LAS files
 print(f'Reading LAS files... {get_time()}')
-classified_pointCloudPath = '../working/training/classified_area.las' #change
+classified_pointCloudPath = '../working/training/classified_smaller.las' #change
 nonClassified_pointCloudPath = '../working/training/lln_clean.las' #change
 
 #create output txt files
