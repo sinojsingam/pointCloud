@@ -5,6 +5,8 @@ import pandas as pd
 import laspy
 from scipy.spatial import cKDTree
 from sklearn.preprocessing import MinMaxScaler
+from rasterio.transform import rowcol
+import rasterio
 
 decimal_digits = 8
 
@@ -241,7 +243,7 @@ def saveNP_as_LAS(data_to_save,reference_LAS,output_file,RF_array,SVM_array):
         point_record.SVM = SVM_array
         writer.write_points(point_record)
 
-def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.float32, loader=False, save=False, output_file=None, ref_las=None):
+def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_type = np.float32, loader=False, save=False, output_file=None, ref_las=None):
     """
     Iterates over each point and calculates the geometric features for each point and its neighbors in a spherical neighborhood.
     """
@@ -266,6 +268,9 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
     second_order_first_vectorList = np.zeros(pc_length, dtype=data_type)
     second_order_second_vectorList = np.zeros(pc_length, dtype=data_type)
     #height values
+    if dtm is not None:
+        transform = dtm.transform
+        heightRelativeList = np.zeros(pc_length, dtype=data_type)
     heightRangeList = np.zeros(pc_length, dtype=data_type)
     heightAvgList = np.zeros(pc_length, dtype=data_type)
     heightBelowList = np.zeros(pc_length, dtype=data_type)
@@ -287,6 +292,11 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
     for i, point in enumerate(translated_3d_color):
         indices = tree.query_ball_point(point[: 3], neighborhood_radius) #query just the coordinates XYZ coordinates and radius
         neighbors = translated_3d_color[indices]
+        if dtm is not None:
+            row, col = rowcol(transform, point[0], point[1])
+            dtm_value = dtm.read(1)[row, col]
+            heightRelativeList[i] = point[2] - dtm_value
+
          # Need at least 4 points to compute a meaningful covariance matrix
         if len(neighbors) < 4:
             omniList[i] = 0.0
@@ -379,6 +389,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             "second_order_first_vector": second_order_first_vectorList,
             "second_order_second_vector": second_order_second_vectorList,
             "height_range":scaler.fit_transform(heightRangeList.reshape(-1, 1)).ravel(),
+            #"height_relative": heightRelativeList,#scaler.fit_transform(heightRelativeList.reshape(-1, 1)).ravel(),
             "height_avg": scaler.fit_transform(heightAvgList.reshape(-1, 1)).ravel(),
             "height_below": scaler.fit_transform(heightBelowList.reshape(-1, 1)).ravel(),
             "height_above": scaler.fit_transform(heightAboveList.reshape(-1, 1)).ravel(),
@@ -386,7 +397,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius, data_type = np.fl
             "neighbor_S": neighboringSList,
             "neighbor_V": neighboringVList
         }
-        
+    if dtm is not None:
+        pointsDict_with_zeros["height_relative"] = heightRelativeList
     # df = pd.DataFrame(pointsDict_with_nan)
     # df = df.dropna()
     # pointsDict = df.to_dict(orient='list')
