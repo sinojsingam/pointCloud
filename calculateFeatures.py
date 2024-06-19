@@ -398,7 +398,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             "neighbor_V": neighboringVList
         }
     if dtm is not None:
-        pointsDict_with_zeros["height_relative"] = heightRelativeList
+        pointsDict_with_zeros["height_relative"] = scaler.fit_transform(heightRelativeList.reshape(-1, 1)).ravel()
     # df = pd.DataFrame(pointsDict_with_nan)
     # df = df.dropna()
     # pointsDict = df.to_dict(orient='list')
