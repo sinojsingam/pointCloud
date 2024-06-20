@@ -21,11 +21,11 @@ def get_time():
 # FILE PATHS
 #LAS files
 print(f'Reading LAS files... {get_time()}')
-classified_pointCloudPath = '../working/classification/nonGroundClassification/offGround_classified.las' #change
-nonClassified_pointCloudPath = '../working/classification/nonGroundClassification/offGroundPoints.las' #change
+classified_pointCloudPath = '../working/nonGroundClassification/offGround_classified.las' #change
+nonClassified_pointCloudPath = '../working/nonGroundClassification/offGroundPoints.las' #change
 #DTM files
-dtmClassified = rasterio.open("working/classification/nonGroundClassification/merged_dtm.tif")
-dtmNonClassified = rasterio.open("../working/classification/nonGroundClassification/dtm_filled.tif")
+dtmClassified = rasterio.open("../working/nonGroundClassification/merged_dtm.tif")
+dtmNonClassified = rasterio.open("../working/nonGroundClassification/dtm_filled.tif")
 
 #create output txt files
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'

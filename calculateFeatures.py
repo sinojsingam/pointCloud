@@ -292,7 +292,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     for i, point in enumerate(translated_3d_color):
         indices = tree.query_ball_point(point[: 3], neighborhood_radius) #query just the coordinates XYZ coordinates and radius
         neighbors = translated_3d_color[indices]
-        if dtm is not None:
+        if dtm is not None: #calculates the height of the point relative to the ground
             row, col = rowcol(transform, point[0], point[1])
             dtm_value = dtm.read(1)[row, col]
             heightRelativeList[i] = point[2] - dtm_value
@@ -398,7 +398,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             "neighbor_V": neighboringVList
         }
     if dtm is not None:
-        pointsDict_with_zeros["height_relative"] = heightRelativeList
+        pointsDict_with_zeros["height_relative"] = scaler.fit_transform(heightRelativeList.reshape(-1, 1)).ravel()
     # df = pd.DataFrame(pointsDict_with_nan)
     # df = df.dropna()
     # pointsDict = df.to_dict(orient='list')
