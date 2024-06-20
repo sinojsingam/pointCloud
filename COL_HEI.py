@@ -22,7 +22,7 @@ def get_time():
 #LAS files
 print(f'Reading LAS files... {get_time()}')
 classified_pointCloudPath = '../working/training/classified_smaller.las' #change
-nonClassified_pointCloudPath = '../working/training/lln_not_classified.las' #change
+nonClassified_pointCloudPath = '../working/multiscale/nonClassified_sample.las' #change
 
 #create output txt files
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
