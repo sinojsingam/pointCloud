@@ -1,12 +1,12 @@
-import numpy as np
-from numpy.linalg import eigh
+import numpy as np # type: ignore
+from numpy.linalg import eigh # type: ignore
 import colorsys
-import pandas as pd
-import laspy
-from scipy.spatial import cKDTree
-from sklearn.preprocessing import MinMaxScaler
-from rasterio.transform import rowcol
-import rasterio
+import pandas as pd # type: ignore
+import laspy # type: ignore
+from scipy.spatial import cKDTree # type: ignore
+from sklearn.preprocessing import MinMaxScaler # type: ignore
+from rasterio.transform import rowcol # type: ignore
+import rasterio # type: ignore
 
 decimal_digits = 8
 
