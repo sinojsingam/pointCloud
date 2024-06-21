@@ -295,7 +295,7 @@ try:
 
     # gch = geometric values, color values and height values
     # array that includes the gch and predictions for plotting
-    full_value_array = np.vstack((nonClassified_features, predictions_RF)).T
+    full_value_array = np.vstack((nonClassified_features.T, predictions_RF)).T
 
     df = pd.DataFrame(full_value_array, columns=extended_features)
     # convert numeric labels to semantic labels
@@ -331,8 +331,9 @@ try:
                 palette=palette,
                 multiple='stack',ax=axs1[1],legend=False,lw=0.5).set_ylabel('')
     #axs1[1].set_ylim(0, 4.5)
-    axs1[1].set_yticks([])
-    sns.despine(ax=axs1[1],left=True) 
+    #axs1[1].set_yticks([])
+    #sns.despine(ax=axs1[1],left=True)
+    sns.despine(ax=axs1[1])  
     sns.kdeplot(data=df, 
                 x="Value", 
                 hue="classification",
@@ -340,8 +341,9 @@ try:
                 palette=palette,
                 multiple='stack',ax=axs1[2],lw=0.5).set_ylabel('')
     #axs1[2].set_ylim(0, 4.2)
-    axs1[2].set_yticks([])
-    sns.despine(ax=axs1[2],left=True)
+    #axs1[2].set_yticks([])
+    #sns.despine(ax=axs1[2],left=True)
+    sns.despine(ax=axs1[2])
     # Display the figure
     fig1.tight_layout()
     fig1.savefig(HSV_plot_path)
@@ -365,8 +367,9 @@ try:
                 palette=palette,
                 multiple='stack',ax=axs2[1],legend=False,lw=0.5).set_ylabel('')
     #axs2[1].set_ylim(0, ylimit)
-    axs2[1].set_yticks([])
-    sns.despine(ax=axs2[1],left=True) 
+    #axs2[1].set_yticks([])
+    #sns.despine(ax=axs2[1],left=True) 
+    sns.despine(ax=axs2[1]) 
     sns.kdeplot(data=df, 
                 x="Height above", 
                 hue="classification",
@@ -374,8 +377,9 @@ try:
                 palette=palette,
                 multiple='stack',ax=axs2[2],lw=0.5).set_ylabel('')
     #axs2[2].set_ylim(0, ylimit)
-    axs2[2].set_yticks([])
-    sns.despine(ax=axs2[2],left=True)
+    #axs2[2].set_yticks([])
+    #sns.despine(ax=axs2[2],left=True)
+    sns.despine(ax=axs2[2])
     # Display the figure
     fig2.tight_layout()
     fig2.savefig(heights_plot_path)
