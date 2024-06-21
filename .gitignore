@@ -1,6 +1,6 @@
 *.ipynb
 *.venv
-*.ipynb_checkpoints
+/.ipynb_checkpoints
 *.env
 __pycache__/
 sendGridCreds.py
