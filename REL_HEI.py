@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split  #type: ignore
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score  #type: ignore
 import matplotlib.pyplot as plt  #type: ignore
 import rasterio  #type: ignore
+import pandas as pd #type: ignore
+import seaborn as sns #type: ignore
 
 additional_text = "REL_HEI"
 print(f"Classifying data for {additional_text}") #change
@@ -34,6 +36,14 @@ outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
 output_path_png = f'../results_final/{additional_text}/rf_importances_{additional_text}.png'
 output_path_csv = f'../results_final/{additional_text}/rf_{additional_text}.csv'
 output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
+
+#KDE plot variables
+hue_order = ['Ground', 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Roof', 'Facade', 'Vehicle']
+palette = ['#d4a373','#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
+HSV_plot_path = f'../results_final/{additional_text}/HSV_plot_{additional_text}.png'
+heights_plot_path = f'../results_final/{additional_text}/heights_plot_{additional_text}.png'
+geomFeatures_plot_path = f'../results_final/{additional_text}/geomFeatures_plot_{additional_text}.png' 
+
 
 # Read LAS data
 # send_email.sendUpdate('Script has begun. Reading LAS files...')
@@ -192,9 +202,9 @@ features = [
         "Neighbor H",
         "Neighbor S",
         "Neighbor V",
-        "H values",
-        "S values",
-        "V values"
+        "Hue",
+        "Saturation",
+        "Value"
     ]
 # Labels
 
@@ -259,6 +269,9 @@ try:
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')
+
+
+#PLOTS
 #save plot of importances
 try:
     #create dictionary
@@ -275,7 +288,184 @@ try:
     plt.xticks(rotation=45, ha='right')
     plt.savefig(output_path_png, bbox_inches='tight')
 except:
-    print('chart was not saved')
+    print('Importances chart was not saved')
+
+extended_features = features.copy()
+extended_features.append('classification')
+
+# gch = geometric values, color values and height values
+# array that includes the gch and predictions for plotting
+full_value_array = np.vstack((nonClassified_features, predictions_RF)).T
+
+df = pd.DataFrame(full_value_array, columns=extended_features)
+# convert numeric labels to semantic labels
+semantic_labels = {
+    2.0: 'Ground',
+    3.0: 'Low Vegetation',
+    4.0: 'Medium Vegetation',
+    5.0: 'High Vegetation',
+    6.0: 'Roof',
+    7.0: 'Facade',
+    12.0: 'Vehicle'
+    }
+df['classification'] = df['classification'].map(semantic_labels)
+
+# plot HSV side to side
+fig1, axs1 = plt.subplots(1, 3, figsize=(15, 5))
+#plot kernel density estimate
+sns.kdeplot(data=df, #data
+            x="Hue", #value to plot
+            hue="classification", #color by classification
+            hue_order=hue_order, #order of classification
+            palette=palette, #color palette
+            multiple= 'stack', #stacked KDE
+            legend=False, #no legend
+            lw=0.5, #line width
+            ax=axs1[0]) #plot on first subplot
+#axs1[0].set_ylim(0, 4.5) #set y-axis limits
+sns.despine(ax=axs1[0])
+sns.kdeplot(data=df, 
+            x="Saturation", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs1[1],legend=False,lw=0.5).set_ylabel('')
+#axs1[1].set_ylim(0, 4.5)
+axs1[1].set_yticks([])
+sns.despine(ax=axs1[1],left=True) 
+sns.kdeplot(data=df, 
+            x="Value", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs1[2],lw=0.5).set_ylabel('')
+#axs1[2].set_ylim(0, 4.2)
+axs1[2].set_yticks([])
+sns.despine(ax=axs1[2],left=True)
+# Display the figure
+fig1.tight_layout()
+fig1.savefig(HSV_plot_path)
+
+
+# plot heights
+fig2, axs2 = plt.subplots(1, 3, figsize=(15, 5))
+ylimit = 10.5
+sns.kdeplot(data=df,
+            x="Height relative", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs2[0],legend=False,lw=0.5)
+#axs2[0].set_ylim(0, ylimit)
+sns.despine(ax=axs2[0])
+sns.kdeplot(data=df, 
+            x="Height below", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs2[1],legend=False,lw=0.5).set_ylabel('')
+#axs2[1].set_ylim(0, ylimit)
+axs2[1].set_yticks([])
+sns.despine(ax=axs2[1],left=True) 
+sns.kdeplot(data=df, 
+            x="Height above", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs2[2],lw=0.5).set_ylabel('')
+#axs2[2].set_ylim(0, ylimit)
+axs2[2].set_yticks([])
+sns.despine(ax=axs2[2],left=True)
+# Display the figure
+fig2.tight_layout()
+fig2.savefig(heights_plot_path)
+
+# plot geometric features
+fig3, axs3 = plt.subplots(4, 2, figsize=(15, 10))
+ylimit = 10.5
+sns.kdeplot(data=df,x="Omnivariance", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[0][0],legend=False,lw=0.5).set_ylabel('')
+#axs[0][0].set_ylim(0, ylimit)
+#axs[0][0].set_yticks([])
+sns.despine(ax=axs3[0][0])
+
+sns.kdeplot(data=df, 
+            x="Eigenentropy", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[0][1],legend=False,lw=0.5).set_ylabel('')
+#axs[0][1].set_ylim(0, ylimit)
+#axs[0][1].set_yticks([])
+sns.despine(ax=axs3[0][1])
+
+sns.kdeplot(data=df, 
+            x="Anisotropy", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[1][0],legend=False,lw=0.5).set_ylabel('')
+#axs[1][0].set_ylim(0, ylimit)
+#axs[1][0].set_yticks([])
+sns.despine(ax=axs3[1][0])
+
+sns.kdeplot(data=df, 
+            x="Linearity", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[1][1],legend=False,lw=0.5).set_ylabel('')
+#axs[1][1].set_ylim(0, ylimit)
+#axs[1][1].set_yticks([])
+sns.despine(ax=axs3[1][1])
+
+sns.kdeplot(data=df, 
+            x="Planarity",
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[2][0],legend=False,lw=0.5).set_ylabel('')
+#axs[2][0].set_ylim(0, ylimit)
+#axs[2][0].set_yticks([])
+sns.despine(ax=axs3[2][0])
+
+sns.kdeplot(data=df, 
+            x="Curvature", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[2][1],lw=0.5).set_ylabel('')
+#axs3[2][1].set_ylim(0, ylimit)
+#axs[2][1].set_yticks([])
+sns.despine(ax=axs3[2][1])
+
+sns.kdeplot(data=df, 
+            x="Sphericity", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[3][0],legend=False,lw=0.5).set_ylabel('')
+#axs[3][0].set_ylim(0, ylimit)
+#axs[3][0].set_yticks([])
+sns.despine(ax=axs3[3][0])
+
+sns.kdeplot(data=df,
+            x="Verticality", 
+            hue="classification",
+            hue_order=hue_order,
+            palette=palette,
+            multiple='stack',ax=axs3[3][1],legend=False,lw=0.5).set_ylabel('')
+#axs[3][1].set_ylim(0, ylimit)
+#axs[3][1].set_yticks([])
+sns.despine(ax=axs3[3][1])
+
+# Display the figure
+fig3.tight_layout()
+fig3.savefig(geomFeatures_plot_path)
+
 
 done_time = time.time()
 

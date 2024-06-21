@@ -1,22 +1,24 @@
 import calculateFeatures
-import numpy as np
-import laspy as lp
+import numpy as np #type: ignore
+import laspy as lp #type: ignore
 import sys
 import send_email
 import time
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import matplotlib.pyplot as plt
-import rasterio
-import pandas as pd
-import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier #type: ignore
+from sklearn.model_selection import train_test_split #type: ignore
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score #type: ignore
+import matplotlib.pyplot as plt #type: ignore
+import rasterio #type: ignore
+import pandas as pd #type: ignore
+import seaborn as sns #type: ignore
 
 classified_pointCloudPath = '../working/geom/classified_smaller.las' #change
-hue_order= ['Ground', 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Building', 'Facade', 'Vehicle']
-palette = ['#d4a373','#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
 
-#paths
+additional_text = ''
+
+#KDE plot variables
+hue_order = ['Ground', 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Building', 'Facade', 'Vehicle']
+palette = ['#d4a373','#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
 HSV_plot_path = f'../working/geom/HSV_plot_{additional_text}.png'
 heights_plot_path = f'../working/geom/heights_plot_{additional_text}.png'
 geomFeatures_plot_path = f'../working/geom/geomFeatures_plot_{additional_text}.png' 
@@ -91,7 +93,6 @@ plt.savefig(HSV_plot_path)
 plt.clf()
 
 # plot heights
-
 fig, axs = plt.subplots(1, 3, figsize=(15, 5))
 ylimit = 10.5
 sns.kdeplot(data=df,
@@ -126,7 +127,6 @@ plt.savefig(heights_plot_path)
 plt.clf()
 
 # plot geometric features
-
 fig, axs = plt.subplots(4, 2, figsize=(15, 10))
 ylimit = 10.5
 sns.kdeplot(data=df,x="omnivariance", 

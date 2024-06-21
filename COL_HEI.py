@@ -1,13 +1,13 @@
 import calculateFeatures
-import numpy as np
-import laspy as lp
+import numpy as np  # type: ignore
+import laspy as lp  # type: ignore
 import sys
 import send_email
 import time
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier  # type: ignore
+from sklearn.model_selection import train_test_split  # type: ignore
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score  # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 
 
 additional_text = "COL_HEI"
@@ -22,7 +22,7 @@ def get_time():
 #LAS files
 print(f'Reading LAS files... {get_time()}')
 classified_pointCloudPath = '../working/training/classified_smaller.las' #change
-nonClassified_pointCloudPath = '../working/multiscale/nonClassified_sample.las' #change
+nonClassified_pointCloudPath = '../working/training/lln_not_classified.las' #change
 
 #create output txt files
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
