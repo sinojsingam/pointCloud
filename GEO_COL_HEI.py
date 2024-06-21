@@ -284,11 +284,11 @@ try:
 except:
     print('chart was not saved')
 
-try:
-    extended_features = features.copy()
-    extended_features.append('classification')
 
-    # gch = geometric values, color values and height values
+extended_features = features.copy()
+extended_features.append('classification')
+
+try:
     # array that includes the gch and predictions for plotting
     full_value_array = np.vstack((nonClassified_features, predictions_RF)).T
 
@@ -459,8 +459,9 @@ try:
     # Display the figure
     fig3.tight_layout()
     fig3.savefig(geomFeatures_plot_path)
-except:
+except Exception as e: 
     print('Density charts were not saved')
+    print(e)
 
 
 
