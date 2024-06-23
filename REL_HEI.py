@@ -38,7 +38,7 @@ output_path_csv = f'../results_final/{additional_text}/rf_{additional_text}.csv'
 output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
 
 #KDE plot variables
-hue_order = ['Ground', 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Roof', 'Facade', 'Vehicle']
+hue_order = [ 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Roof', 'Facade', 'Vehicle']
 palette = ['#d4a373','#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
 HSV_plot_path = f'../results_final/{additional_text}/HSV_plot_{additional_text}.png'
 heights_plot_path = f'../results_final/{additional_text}/heights_plot_{additional_text}.png'
@@ -300,7 +300,7 @@ try:
     df = pd.DataFrame(full_value_array, columns=extended_features)
     # convert numeric labels to semantic labels
     semantic_labels = {
-        2.0: 'Ground',
+        #2.0: 'Ground',
         3.0: 'Low Vegetation',
         4.0: 'Medium Vegetation',
         5.0: 'High Vegetation',
