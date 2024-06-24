@@ -309,9 +309,9 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     xList = data_array[:, 0]
     yList = data_array[:, 1]
     zList = data_array[:, 2]
-    redList = data_array[:, 5]
-    greenList = data_array[:, 6]
-    blueList = data_array[:, 7]
+    redList = data_array[:, 5] / 65535.0
+    greenList = data_array[:, 6] / 65535.0
+    blueList = data_array[:, 7] / 65535.0
     # color values #
     H_List = colors_hsv[:, 0].astype(data_type)
     S_List = colors_hsv[:, 1].astype(data_type)

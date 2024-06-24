@@ -36,7 +36,9 @@ output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
 #KDE plot variables
 hue_order = ['Ground', 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Roof', 'Facade', 'Vehicle']
 palette = ['#d4a373','#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
+#paths for KDE plots
 HSV_plot_path = f'../results_final/{additional_text}/HSV_plot_{additional_text}.png'
+RGB_plot_path = f'../results_final/{additional_text}/RGB_plot_{additional_text}.png'
 heights_plot_path = f'../results_final/{additional_text}/heights_plot_{additional_text}.png'
 geomFeatures_plot_path = f'../results_final/{additional_text}/geomFeatures_plot_{additional_text}.png' 
 
@@ -360,11 +362,11 @@ try:
     fig1.tight_layout()
     fig1.savefig(HSV_plot_path)
 
-    # plot HSV side to side
+    # plot RGB side to side
     fig4, axs4 = plt.subplots(1, 3, figsize=(15, 5))
     #plot kernel density estimate
     sns.kdeplot(data=df, #data
-                x="Hue", #value to plot
+                x="Red", #value to plot
                 hue="classification", #color by classification
                 hue_order=hue_order, #order of classification
                 palette=palette, #color palette
@@ -375,7 +377,7 @@ try:
     #axs1[0].set_ylim(0, 4.5) #set y-axis limits
     sns.despine(ax=axs4[0])
     sns.kdeplot(data=df, 
-                x="Saturation", 
+                x="Green", 
                 hue="classification",
                 hue_order=hue_order,
                 palette=palette,
@@ -385,7 +387,7 @@ try:
     #sns.despine(ax=axs1[1],left=True)
     sns.despine(ax=axs4[1])  
     sns.kdeplot(data=df, 
-                x="Value", 
+                x="Blue", 
                 hue="classification",
                 hue_order=hue_order,
                 palette=palette,
@@ -396,7 +398,7 @@ try:
     sns.despine(ax=axs4[2])
     # Display the figure
     fig4.tight_layout()
-    fig4.savefig(HSV_plot_path)
+    fig4.savefig(RGB_plot_path)
 
     # plot heights
     fig2, axs2 = plt.subplots(1, 3, figsize=(15, 5))
