@@ -39,7 +39,7 @@ output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
 
 #KDE plot variables
 hue_order = [ 'Low Vegetation', 'Medium Vegetation', 'High Vegetation', 'Roof', 'Facade', 'Vehicle']
-palette = ['#d4a373','#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
+palette = ['#a3b18a','#588157','#344e41','#c0d0d5','#fefae0','#555555']
 HSV_plot_path = f'../results_final/{additional_text}/HSV_plot_{additional_text}.png'
 heights_plot_path = f'../results_final/{additional_text}/heights_plot_{additional_text}.png'
 geomFeatures_plot_path = f'../results_final/{additional_text}/geomFeatures_plot_{additional_text}.png' 

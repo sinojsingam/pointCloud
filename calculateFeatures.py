@@ -219,14 +219,27 @@ def saveDF_as_LAS(df,reference_LAS,output_file):
         # point_record.GBT = df.get('predictions_GBT')
         writer.write_points(point_record)
 
-def saveNP_as_LAS(data_to_save,reference_LAS,output_file,RF_array,SVM_array):
+def saveNP_as_LAS(data_to_save,reference_LAS,output_file,RF_array, geom=False,geomList=[],height=False, heightList = []):
     # Create a new header
     header = laspy.LasHeader(point_format=reference_LAS.header.point_format, version=reference_LAS.header.version)
     header.offsets = reference_LAS.header.offsets
     header.scales = reference_LAS.header.scales
     # radius = str(0.5)
     header.add_extra_dim(laspy.ExtraBytesParams(name=f"RF", type=np.float32))
-    header.add_extra_dim(laspy.ExtraBytesParams(name=f"SVM", type=np.float32))
+    #header.add_extra_dim(laspy.ExtraBytesParams(name=f"SVM", type=np.float32))
+    if geom:
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Omnivariance", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Eigenentropy", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Anisotropy", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Linearity", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Planarity", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Curvature", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Sphericity", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Verticality", type=np.float32))
+    if height:
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Relative", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Height_below", type=np.float32))
+        header.add_extra_dim(laspy.ExtraBytesParams(name=f"Height_above", type=np.float32))
     #retrieve color info from las file
     # rgb_non_normalised = np.vstack((point_cloud.red,point_cloud.green,point_cloud.blue)).transpose() * 65535.0 
     # Create a LasWriter and a point record, then write it
@@ -240,7 +253,20 @@ def saveNP_as_LAS(data_to_save,reference_LAS,output_file,RF_array,SVM_array):
         #point_record.green = data_to_save[:, 5]
         #point_record.blue = data_to_save[:, 6]
         point_record.RF = RF_array
-        point_record.SVM = SVM_array
+        #point_record.SVM = SVM_array
+        if geom:
+            point_record.Omnivariance = geomList[0]
+            point_record.Eigenentropy = geomList[1]
+            point_record.Anisotropy = geomList[2]
+            point_record.Linearity = geomList[3]
+            point_record.Planarity = geomList[4]
+            point_record.Curvature = geomList[5]
+            point_record.Sphericity = geomList[6]
+            point_record.Verticality = geomList[7]
+        if height:
+            point_record.Relative = heightList[0]
+            point_record.Height_below = heightList[1]
+            point_record.Height_above = heightList[2]
         writer.write_points(point_record)
 
 def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_type = np.float32, loader=False, save=False, output_file=None, ref_las=None):
@@ -283,6 +309,9 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     xList = data_array[:, 0]
     yList = data_array[:, 1]
     zList = data_array[:, 2]
+    redList = data_array[:, 5]
+    greenList = data_array[:, 6]
+    blueList = data_array[:, 7]
     # color values #
     H_List = colors_hsv[:, 0].astype(data_type)
     S_List = colors_hsv[:, 1].astype(data_type)
@@ -395,7 +424,10 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             "height_above": scaler.fit_transform(heightAboveList.reshape(-1, 1)).ravel(),
             "neighbor_H": neighboringHList,
             "neighbor_S": neighboringSList,
-            "neighbor_V": neighboringVList
+            "neighbor_V": neighboringVList,
+            "red": redList,
+            "green": greenList,
+            "blue": blueList
         }
     if dtm is not None:
         pointsDict_with_zeros["height_relative"] = scaler.fit_transform(heightRelativeList.reshape(-1, 1)).ravel()

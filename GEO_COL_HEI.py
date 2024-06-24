@@ -117,6 +117,10 @@ nonClassified_X = np.concatenate([nonClassified_features_s1.get('X'),nonClassifi
 nonClassified_Y = np.concatenate([nonClassified_features_s1.get('Y'),nonClassified_features_s2.get('Y'),nonClassified_features_s3.get('Y')])
 nonClassified_Z = np.concatenate([nonClassified_features_s1.get('Z'),nonClassified_features_s2.get('Z'),nonClassified_features_s3.get('Z')])
 nonClassified_Z_scaled = np.concatenate([nonClassified_features_s1.get('Z_scaled'),nonClassified_features_s2.get('Z_scaled'),nonClassified_features_s3.get('Z_scaled')])
+nonClassified_red = np.concatenate([nonClassified_features_s1.get('red'),nonClassified_features_s2.get('red'),nonClassified_features_s3.get('red')])
+nonClassified_green = np.concatenate([nonClassified_features_s1.get('green'),nonClassified_features_s2.get('green'),nonClassified_features_s3.get('green')])
+nonClassified_blue = np.concatenate([nonClassified_features_s1.get('blue'),nonClassified_features_s2.get('blue'),nonClassified_features_s3.get('blue')])
+
 
 nonClassified_omnivariance = np.concatenate([nonClassified_features_s1.get('omnivariance'),nonClassified_features_s2.get('omnivariance'),nonClassified_features_s3.get('omnivariance')])
 nonClassified_eigenentropy = np.concatenate([nonClassified_features_s1.get('eigenentropy'),nonClassified_features_s2.get('eigenentropy'),nonClassified_features_s3.get('eigenentropy')])
@@ -150,7 +154,6 @@ classified_features = np.vstack((
                     classified_verticality,
                     classified_height_range,
                     classified_Z_scaled,
-                    #classified_height_avg,
                     classified_height_below,
                     classified_height_above,
                     classified_neighbor_H,
@@ -172,7 +175,6 @@ nonClassified_features = np.vstack((
                     nonClassified_verticality,
                     nonClassified_height_range,
                     nonClassified_Z_scaled,
-                    #nonClassified_height_avg,
                     nonClassified_height_below,
                     nonClassified_height_above,
                     nonClassified_neighbor_H,
@@ -182,6 +184,7 @@ nonClassified_features = np.vstack((
                     nonClassified_S_values,
                     nonClassified_V_values
                     )).transpose()
+
 features = [
         'Omnivariance',
         'Eigenentropy',
@@ -248,8 +251,7 @@ predictions_RF = rf_model.predict(nonClassified_features)
 result_output_array= np.vstack((nonClassified_X,
                                 nonClassified_Y,
                                 nonClassified_Z,
-                                predictions_RF,
-                                nonClassified_verticality #place holder second ML values
+                                predictions_RF
                                 )).T
 
 print(f'Saving CSV file... {get_time()}')
@@ -258,11 +260,19 @@ print(f'Saving CSV file... {get_time()}')
 
 try:
     print(f'Saving classified points as LAS... {get_time()}')
-    calculateFeatures.saveNP_as_LAS(result_output_array, # Array with X,Y,Z values
+    calculateFeatures.saveNP_as_LAS([nonClassified_X, nonClassified_Y, nonClassified_Z], # Array with X,Y,Z values
                                     nonClassified_pointCloud, # Reference pc with headers
                                     output_path_las, # output path
                                     predictions_RF, # RF values
-                                    nonClassified_verticality) #place holder second ML values
+                                    geom=True,
+                                    geomList=[nonClassified_omnivariance,
+                                              nonClassified_eigenentropy,
+                                              nonClassified_anisotropy,
+                                              nonClassified_linearity,
+                                              nonClassified_planarity,
+                                              nonClassified_curvature,
+                                              nonClassified_sphericity,
+                                              nonClassified_verticality])
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')
@@ -284,13 +294,19 @@ try:
 except:
     print('chart was not saved')
 
-
+#stack color information
+nonClassified_colors = np.vstack((nonClassified_red,nonClassified_green,nonClassified_blue)).T
+# extended list for housing parameters that were not used for classification
 extended_features = features.copy()
+#add labels for the extended parameters
+extended_features.append('Red')
+extended_features.append('Green')
+extended_features.append('Blue')
 extended_features.append('classification')
 
 try:
     # array that includes the gch and predictions for plotting
-    full_value_array = np.vstack((nonClassified_features.T, predictions_RF)).T
+    full_value_array = np.vstack((nonClassified_features.T,nonClassified_colors.T, predictions_RF)).T
 
     df = pd.DataFrame(full_value_array, columns=extended_features)
     # convert numeric labels to semantic labels
@@ -343,6 +359,44 @@ try:
     # Display the figure
     fig1.tight_layout()
     fig1.savefig(HSV_plot_path)
+
+    # plot HSV side to side
+    fig4, axs4 = plt.subplots(1, 3, figsize=(15, 5))
+    #plot kernel density estimate
+    sns.kdeplot(data=df, #data
+                x="Hue", #value to plot
+                hue="classification", #color by classification
+                hue_order=hue_order, #order of classification
+                palette=palette, #color palette
+                multiple= 'stack', #stacked KDE
+                legend=False, #no legend
+                lw=0.5, #line width
+                ax=axs4[0]) #plot on first subplot
+    #axs1[0].set_ylim(0, 4.5) #set y-axis limits
+    sns.despine(ax=axs4[0])
+    sns.kdeplot(data=df, 
+                x="Saturation", 
+                hue="classification",
+                hue_order=hue_order,
+                palette=palette,
+                multiple='stack',ax=axs4[1],legend=False,lw=0.5).set_ylabel('')
+    #axs1[1].set_ylim(0, 4.5)
+    #axs1[1].set_yticks([])
+    #sns.despine(ax=axs1[1],left=True)
+    sns.despine(ax=axs4[1])  
+    sns.kdeplot(data=df, 
+                x="Value", 
+                hue="classification",
+                hue_order=hue_order,
+                palette=palette,
+                multiple='stack',ax=axs4[2],lw=0.5).set_ylabel('')
+    #axs1[2].set_ylim(0, 4.2)
+    #axs1[2].set_yticks([])
+    #sns.despine(ax=axs1[2],left=True)
+    sns.despine(ax=axs4[2])
+    # Display the figure
+    fig4.tight_layout()
+    fig4.savefig(HSV_plot_path)
 
     # plot heights
     fig2, axs2 = plt.subplots(1, 3, figsize=(15, 5))
