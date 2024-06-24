@@ -253,7 +253,7 @@ try:
                                     nonClassified_pointCloud, # Reference pc with headers
                                     output_path_las, # output path
                                     predictions_RF, # RF values
-                                    nonClassified_verticality) #place holder second ML values
+                                    )
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')

@@ -252,7 +252,6 @@ result_output_array= np.vstack((nonClassified_X,
                                 nonClassified_Y,
                                 nonClassified_Z,
                                 predictions_RF,
-                                nonClassified_verticality #place holder second ML values
                                 )).T
 
 print(f'Saving CSV file... {get_time()}')
@@ -265,7 +264,8 @@ try:
                                     nonClassified_pointCloud, # Reference pc with headers
                                     output_path_las, # output path
                                     predictions_RF, # RF values
-                                    nonClassified_verticality) #place holder second ML values
+                                    height=True,
+                                    heightList=[nonClassified_height_rel,nonClassified_height_below,nonClassified_height_above]) #place holder second ML values
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')
