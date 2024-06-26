@@ -297,6 +297,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     if dtm is not None:
         transform = dtm.transform
         heightRelativeList = np.zeros(pc_length, dtype=data_type)
+        heightRelativeBelowList = np.zeros(pc_length, dtype=data_type)
+        heightRelativeAboveList = np.zeros(pc_length, dtype=data_type)
     heightRangeList = np.zeros(pc_length, dtype=data_type)
     heightAvgList = np.zeros(pc_length, dtype=data_type)
     heightBelowList = np.zeros(pc_length, dtype=data_type)
@@ -325,7 +327,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             row, col = rowcol(transform, point[0], point[1])
             dtm_value = dtm.read(1)[row, col]
             heightRelativeList[i] = point[2] - dtm_value
-
+            heightRelativeBelowList[i] = ''
          # Need at least 4 points to compute a meaningful covariance matrix
         if len(neighbors) < 4:
             omniList[i] = 0.0

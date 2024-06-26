@@ -12,7 +12,7 @@ import rasterio  #type: ignore
 import pandas as pd #type: ignore
 import seaborn as sns #type: ignore
 
-additional_text = "REL_HEI"
+additional_text = "REL_HEI_ALL_TILE"
 print(f"Classifying data for {additional_text}") #change
 start_read = time.time()
 # Get current current time
@@ -24,10 +24,12 @@ def get_time():
 #LAS files
 print(f'Reading LAS files... {get_time()}')
 classified_pointCloudPath = '../working/nonGroundClassification/offGround_classified.las' #change
-nonClassified_pointCloudPath = '../working/nonGroundClassification/offGroundPoints.las' #change
+#nonClassified_pointCloudPath = '../working/nonGroundClassification/offGroundPoints.las' #change
+nonClassified_pointCloudPath = '../working/nonGroundClassification/lln_nonGround.las'
 #DTM files
 dtmClassified = rasterio.open("../working/nonGroundClassification/merged_dtm.tif")
-dtmNonClassified = rasterio.open("../working/nonGroundClassification/dtm_filled.tif")
+#dtmNonClassified = rasterio.open("../working/nonGroundClassification/dtm_filled.tif")
+dtmNonClassified = rasterio.open("../working/nonGroundClassification/lln_ground_FILLED.tif")
 
 #create output txt files
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
