@@ -245,23 +245,7 @@ except Exception as e:
 
 
 #PLOTS
-#save plot of importances
-try:
-    #create dictionary
-    combined_dict = {features[i]: importances[i] for i in range(len(features))}
-    #sort the values
-    sorted_dict = dict(sorted(combined_dict.items(), key=lambda item: item[1]))
-    plt.clf()
-    plt.figure(figsize=(10, 6))
-    plt.bar(sorted_dict.keys(), sorted_dict.values())
-    plt.style.use('fast')
-    plt.xlabel('Features')
-    plt.ylabel('Importance')
-    plt.title('Importance of features')
-    plt.xticks(rotation=45, ha='right')
-    plt.savefig(output_path_png, bbox_inches='tight')
-except:
-    print('Importances chart was not saved')
+
 try:
     extended_features = features.copy()
     extended_features.append('classification')
@@ -326,7 +310,7 @@ try:
     fig2, axs2 = plt.subplots(1, 3, figsize=(15, 5))
     ylimit = 10.5
     sns.kdeplot(data=df,
-                x="Height relative", 
+                x="Height mean", 
                 hue="classification",
                 hue_order=hue_order,
                 palette=palette,
@@ -349,6 +333,7 @@ try:
                 hue_order=hue_order,
                 palette=palette,
                 multiple='stack',ax=axs2[2],lw=0.5).set_ylabel('')
+    sns.move_legend(axs2[2], 0)
     #axs2[2].set_ylim(0, ylimit)
     #axs2[2].set_yticks([])
     #sns.despine(ax=axs2[2],left=True)

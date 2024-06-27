@@ -427,6 +427,7 @@ try:
                 hue_order=hue_order,
                 palette=palette,
                 multiple='stack',ax=axs2[2],lw=0.5).set_ylabel('')
+    sns.move_legend(axs2[2], 2)
     #axs2[2].set_ylim(0, ylimit)
     #axs2[2].set_yticks([])
     #sns.despine(ax=axs2[2],left=True)

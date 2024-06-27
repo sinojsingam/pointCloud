@@ -205,7 +205,7 @@ times, predictions_RF = calculateFeatures.classifyPointCloud(additional_text,
                                                              outputErrorRF,
                                                              importances_path_png)
 
-fieldnames = ["model", "training_time", "predicting_time"]
+fieldnames = ["model", "trainingTime", "predictingTime"]
 
 # Open the CSV file in append mode
 with open("../working/times/times.csv", "a", newline='') as csvfile:
