@@ -5,8 +5,13 @@ import pandas as pd # type: ignore
 import laspy # type: ignore
 from scipy.spatial import cKDTree # type: ignore
 from sklearn.preprocessing import MinMaxScaler # type: ignore
+from sklearn.ensemble import RandomForestClassifier  #type: ignore
+from sklearn.model_selection import train_test_split  #type: ignore
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score  #type: ignore
+import matplotlib.pyplot as plt  #type: ignore
 from rasterio.transform import rowcol # type: ignore
 import rasterio # type: ignore
+import time
 
 decimal_digits = 8
 
@@ -281,8 +286,10 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     """
     Iterates over each point and calculates the geometric features for each point and its neighbors in a spherical neighborhood.
     """
+
     colors_rgb = (data_array[:, 5:8] / 65535.0).astype(data_type) #normalise
     colors_hsv = np.round(np.array([colorsys.rgb_to_hsv(*rgb) for rgb in colors_rgb]),decimals=2).astype(data_type)
+
     translated_3d_color = np.hstack([data_array, colors_hsv])
     tree = cKDTree(translated_3d_color[:, :3])
     pc_length = translated_3d_color.shape[0]
@@ -303,6 +310,7 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     second_order_second_vectorList = np.zeros(pc_length, dtype=data_type)
     #height values
     if dtm is not None:
+        
         transform = dtm.transform
         heightRelativeList = np.zeros(pc_length, dtype=data_type)
         heightRelativeBelowList = np.zeros(pc_length, dtype=data_type)
@@ -381,7 +389,6 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             lambda_1 = eigenvalues[2] / sum_eigenvalues
             lambda_2 = eigenvalues[1] / sum_eigenvalues
             lambda_3 = eigenvalues[0] / sum_eigenvalues
-            
             #Geometric features
             omni = compute_omnivariance(lambda_1, lambda_2, lambda_3)
             eigen = compute_eigenentropy(lambda_1, lambda_2, lambda_3)
@@ -468,3 +475,56 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             ref_las = laspy.read('../working/classification/multiscale/classified_sample.las')
             #saveDF_as_LAS(pd.DataFrame(pointsDict), ref_las, neighborhood_radius, output_path+output_file)
     return pointsDict_with_zeros
+
+def classifyPointCloud(modelname, classified_features, nonClassified_features, features, labels, errorTXTPath,importances_png_path):
+    processing_times = {'model':modelname}
+    trainingBegin = time.time()
+    
+    # data to train on
+    X_train, X_test, y_train, y_test = train_test_split(classified_features, labels, test_size=0.2, random_state=42)
+    # RF model
+    rf_model = RandomForestClassifier(n_estimators=50)
+    # Train the models
+    rf_model.fit(X_train, y_train)
+    # Evaluate model
+    y_pred_rf = rf_model.predict(X_test)
+    # RF model report
+    report_RF = classification_report(y_test, y_pred_rf)
+    matrix_RF = confusion_matrix(y_test, y_pred_rf)
+    accuracy_RF = accuracy_score(y_test, y_pred_rf)
+    importances = rf_model.feature_importances_
+
+    #Get accuracy results and write to file
+    with open(errorTXTPath, 'w') as f:
+        f.write('Classification Report for Random Forests:\n')
+        f.write(report_RF)
+        f.write('\nConfusion Matrix:\n')
+        f.write(str(matrix_RF))
+        f.write(f'\nAccuracy: {accuracy_RF * 100:.2f}%')
+        f.write('\nFeature ranking:\n')
+        for f_index in range(len(features)):
+            f.write(f"{features[f_index]}: {importances[f_index]}\n")
+    trainingEnd = time.time()
+    predictions_RF = rf_model.predict(nonClassified_features)
+    predictionsEnd = time.time()
+    #save plot of importances
+    try:
+        #create dictionary
+        combined_dict = {features[i]: importances[i] for i in range(len(features))}
+        #sort the values
+        sorted_dict = dict(sorted(combined_dict.items(), key=lambda item: item[1]))
+        plt.clf()
+        plt.figure(figsize=(10, 6))
+        plt.bar(sorted_dict.keys(), sorted_dict.values(), color='#0a9396')
+        plt.style.use('fast')
+        plt.xlabel('Features')
+        plt.ylabel('Importance')
+        # plt.title('Importance of features')
+        plt.xticks(rotation=45, ha='right')
+        plt.savefig(importances_png_path, bbox_inches='tight')
+    except:
+        print('chart was not saved')
+    processing_times['trainingTime'] = trainingEnd - trainingBegin
+    processing_times['predictingTime'] = predictionsEnd - trainingEnd
+
+    return processing_times, predictions_RF

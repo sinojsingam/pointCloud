@@ -212,43 +212,14 @@ features = [
 
 labels = np.concatenate([classified_features_s1.get('classification'),classified_features_s2.get('classification'),classified_features_s3.get('classification')])
 
-#-------#
-send_email.sendUpdate(f'Classification has begun for {additional_text}')
-# Train a classifier
-X_train, X_test, y_train, y_test = train_test_split(classified_features, labels, test_size=0.2, random_state=42)
 
-# Machine learning models
-rf_model = RandomForestClassifier(n_estimators=50)
+times, predictions_RF = calculateFeatures.classifyPointCloud(additional_text, 
+                                                             classified_features, 
+                                                             nonClassified_features, 
+                                                             features, 
+                                                             labels, 
+                                                             outputErrorRF)
 
-# Train the models
-print(f'Training models... {get_time()}')
-rf_model.fit(X_train, y_train)
-#svm_model.fit(X_train, y_train)
-# Evaluate model
-send_email.sendUpdate('Training done. Evaluating models...')
-print(f'Evaluating models... {get_time()}')
-y_pred_rf = rf_model.predict(X_test)
-#y_pred_svm = svm_model.predict(X_test)
-#Predict the non-classified area
-# RF model report
-print(f'Writing RF classification performance to file... {get_time()}')
-report_RF = classification_report(y_test, y_pred_rf)
-matrix_RF = confusion_matrix(y_test, y_pred_rf)
-accuracy_RF = accuracy_score(y_test, y_pred_rf)
-importances = rf_model.feature_importances_
-#Get accuracy results and write to file
-with open(outputErrorRF, 'w') as f:
-    f.write('Classification Report for Random Forests:\n')
-    f.write(report_RF)
-    f.write('\nConfusion Matrix:\n')
-    f.write(str(matrix_RF))
-    f.write(f'\nAccuracy: {accuracy_RF * 100:.2f}%')
-    f.write('\nFeature ranking:\n')
-    for f_index in range(len(features)):
-        f.write(f"{features[f_index]}: {importances[f_index]}\n")
-
-print(f'Predicting non-classified pc... {get_time()}')
-predictions_RF = rf_model.predict(nonClassified_features)
 # predictions_SVM = svm_model.predict(nonClassified_features)
 result_output_array= np.vstack((nonClassified_X,
                                 nonClassified_Y,
