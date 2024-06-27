@@ -142,8 +142,16 @@ def compute_height(point,neighbors):
     min, max = np.min(z_neighbors), np.max(z_neighbors)
     range = round(max - min, 2).astype(np.float32)
     average_height = round(np.mean(z_neighbors),2).astype(np.float32)
-    height_above = round(max - z_point,2).astype(np.float32).astype(np.float32)
     height_below = round(z_point - min,2).astype(np.float32).astype(np.float32)
+    height_above = round(max - z_point,2).astype(np.float32).astype(np.float32)
+    return range, average_height, height_below, height_above
+
+def compute_relative_height(rel_z_point,rel_z_neighbors):
+    min, max = np.min(rel_z_neighbors), np.max(rel_z_neighbors)
+    range = round(max - min, 2).astype(np.float32)
+    average_height = round(np.mean(rel_z_neighbors),2).astype(np.float32)
+    height_below = round(rel_z_point - min,2).astype(np.float32).astype(np.float32)
+    height_above = round(max - rel_z_point,2).astype(np.float32).astype(np.float32)
     return range, average_height, height_below, height_above
 
 def rgb_to_hsv(colors_array):
@@ -326,8 +334,19 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
         if dtm is not None: #calculates the height of the point relative to the ground
             row, col = rowcol(transform, point[0], point[1])
             dtm_value = dtm.read(1)[row, col]
-            heightRelativeList[i] = point[2] - dtm_value
-            heightRelativeBelowList[i] = ''
+            relative_z = point[2] - dtm_value
+            heightRelativeList[i] = relative_z
+            relative_heights = []
+            # Loop through each neighbor point
+            for neighbor in neighbors:
+                # Convert XY coordinates to row and column in the DTM array
+                rowN, colN = rowcol(transform, neighbor[0], neighbor[1])
+                # Fetch the DTM value
+                dtm_valueN = dtm.read(1)[rowN, colN]
+                # Calculate the relative height by subtracting the DTM value from the Z-coordinate
+                relative_height = neighbor[2] - dtm_valueN
+                # Append the relative height to the list
+                relative_heights.append(relative_height)
          # Need at least 4 points to compute a meaningful covariance matrix
         if len(neighbors) < 4:
             omniList[i] = 0.0
@@ -350,7 +369,11 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             second_order_first_vectorList[i] = 0.0
             second_order_second_vectorList[i] = 0.0
         else:
-            heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
+            if dtm is not None:
+                heightRange,average_height, heightBelow, heightAbove = compute_relative_height(relative_z, relative_heights)
+            else:
+                heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
+
             cov_matrix = compute_covariance_matrix(neighbors[:, :3]).astype(data_type)
             eigenvalues,eigenvectors = compute_eigenvalues(cov_matrix)
             sum_eigenvalues = np.sum(eigenvalues) + 0.001 
