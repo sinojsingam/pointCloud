@@ -55,6 +55,15 @@ non_classified_scales = [nonClassified_subsampled_s1.shape[0], nonClassified_sub
 # Original point counts
 original_points = [classified_points_array.shape[0], nonClassified_points_array.shape[0]]
 
+
+print('classified_scales')
+print(classified_scales)
+print('='*10)
+print('non_classified_scales')
+print(non_classified_scales)
+print('='*10)
+print('original number')
+print(original_points)
 # Labels for the x-axis
 labels = ['Training point cloud', 'Predicted point cloud']
 
@@ -73,14 +82,14 @@ ind = np.arange(N)
 # Define the width of the bars and the gap
 bar_width = 0.35
 gap = 0.1
-
+color_pallette = ['#49beaa','#456990','#ef767a']
 # Plot original points
 ax.bar(ind - (bar_width + gap) / 2, original_points, width=bar_width, label='Original Points', color='gray')
 
 # Plot each stack
 bottoms = np.zeros(N)
 for i in range(data.shape[0]):
-    ax.bar(ind + (bar_width + gap) / 2, data[i], width=bar_width, bottom=bottoms, label=f'Scale {i+1}')
+    ax.bar(ind + (bar_width + gap) / 2, data[i], width=bar_width, bottom=bottoms, label=f'Scale {i+1}',color=color_pallette[i])
     bottoms += data[i]
 
 # Add labels, title, and adjust layout
@@ -98,4 +107,4 @@ ax.tick_params(colors='#4D4D4D')
 for spine in ax.spines.values():
     spine.set_color('#4D4D4D')
 # Show the plot
-fig.savefig('../results_final/subsample/numPoints.png')
+fig.savefig('../results_final/subsample/numPoints.png', dpi=300)

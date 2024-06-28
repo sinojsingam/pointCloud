@@ -310,11 +310,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
     second_order_second_vectorList = np.zeros(pc_length, dtype=data_type)
     #height values
     if dtm is not None:
-        
         transform = dtm.transform
         heightRelativeList = np.zeros(pc_length, dtype=data_type)
-        heightRelativeBelowList = np.zeros(pc_length, dtype=data_type)
-        heightRelativeAboveList = np.zeros(pc_length, dtype=data_type)
     heightRangeList = np.zeros(pc_length, dtype=data_type)
     heightAvgList = np.zeros(pc_length, dtype=data_type)
     heightBelowList = np.zeros(pc_length, dtype=data_type)

@@ -1,7 +1,7 @@
 import calculateFeatures
 import numpy as np #type: ignore
 import laspy as lp  #type: ignore
-import sys
+import csv
 import send_email
 import time
 from sklearn.ensemble import RandomForestClassifier  #type: ignore
@@ -35,7 +35,7 @@ dtmNonClassified = rasterio.open("../working/nonGroundClassification/lln_ground_
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
 # outputErrorSVM = '../results/error_SVM_multi_reduced_gpu_rf.txt'
 #create output csv file
-output_path_png = f'../results_final/{additional_text}/rf_importances_{additional_text}.png'
+importances_path_png = f'../results_final/{additional_text}/rf_importances_{additional_text}.png'
 output_path_csv = f'../results_final/{additional_text}/rf_{additional_text}.csv'
 output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
 
@@ -218,7 +218,24 @@ times, predictions_RF = calculateFeatures.classifyPointCloud(additional_text,
                                                              nonClassified_features, 
                                                              features, 
                                                              labels, 
-                                                             outputErrorRF)
+                                                             outputErrorRF,
+                                                             importances_path_png)
+
+fieldnames = ["model", "trainingTime", "predictingTime"]
+
+# Open the CSV file in append mode
+with open("../working/times/times.csv", "a", newline='') as csvfile:
+    # Create a DictWriter object, passing the file object and the fieldnames
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    # Check if the file is empty to write the header
+    csvfile.seek(0, 2)  # Move the cursor to the end of the file
+    if csvfile.tell() == 0:
+        # Write the header only if the file is empty
+        writer.writeheader()
+    
+    # Write the dictionary to the CSV file
+    writer.writerow(times)
+
 
 # predictions_SVM = svm_model.predict(nonClassified_features)
 result_output_array= np.vstack((nonClassified_X,
@@ -241,7 +258,7 @@ try:
                                     heightList=[nonClassified_height_rel,nonClassified_height_below,nonClassified_height_above]) #place holder second ML values
 except Exception as e:
     print(e)
-    send_email.sendNotification('Error in saving classified points as LAS')
+    send_email.sendNotification(f'Error in saving classified points as LAS with {additional_text}')
 
 
 #PLOTS

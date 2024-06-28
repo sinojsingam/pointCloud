@@ -1,7 +1,7 @@
 import calculateFeatures
 import numpy as np  # type: ignore
 import laspy as lp  # type: ignore
-import sys
+import csv
 import send_email
 import time
 from sklearn.ensemble import RandomForestClassifier  # type: ignore
@@ -28,7 +28,7 @@ nonClassified_pointCloudPath = '../working/training/lln_not_classified.las' #cha
 outputErrorRF = f'../results_final/{additional_text}/rf_{additional_text}.txt'
 # outputErrorSVM = '../results/error_SVM_multi_reduced_gpu_rf.txt'
 #create output csv file
-output_path_png = f'../results_final/{additional_text}/rf_importances_{additional_text}.png'
+importances_path_png = f'../results_final/{additional_text}/rf_importances_{additional_text}.png'
 output_path_csv = f'../results_final/{additional_text}/rf_{additional_text}.csv'
 output_path_las = f'../results_final/{additional_text}/rf_{additional_text}.las'
 
@@ -196,44 +196,31 @@ features = [
 
 labels = np.concatenate([classified_features_s1.get('classification'),classified_features_s2.get('classification'),classified_features_s3.get('classification')])
 
-#-------#
-send_email.sendUpdate(f'Classification has begun for {additional_text}')
-# Train a classifier
-X_train, X_test, y_train, y_test = train_test_split(classified_features, labels, test_size=0.2, random_state=42)
+labels = np.concatenate([classified_features_s1.get('classification'),classified_features_s2.get('classification'),classified_features_s3.get('classification')])
 
-# Machine learning models
-rf_model = RandomForestClassifier(n_estimators=50)
+times, predictions_RF = calculateFeatures.classifyPointCloud(additional_text, 
+                                                             classified_features, 
+                                                             nonClassified_features, 
+                                                             features, 
+                                                             labels, 
+                                                             outputErrorRF,
+                                                             importances_path_png)
 
-# Train the models
-print(f'Training models... {get_time()}')
-rf_model.fit(X_train, y_train)
-#svm_model.fit(X_train, y_train)
-# Evaluate model
-send_email.sendUpdate('Training done. Evaluating models...')
-print(f'Evaluating models... {get_time()}')
-y_pred_rf = rf_model.predict(X_test)
-#y_pred_svm = svm_model.predict(X_test)
-#Predict the non-classified area
-# RF model report
-print(f'Writing RF classification performance to file... {get_time()}')
-report_RF = classification_report(y_test, y_pred_rf)
-matrix_RF = confusion_matrix(y_test, y_pred_rf)
-accuracy_RF = accuracy_score(y_test, y_pred_rf)
-importances = rf_model.feature_importances_
-#Get accuracy results and write to file
-with open(outputErrorRF, 'w') as f:
-    f.write('Classification Report for Random Forests:\n')
-    f.write(report_RF)
-    f.write('\nConfusion Matrix:\n')
-    f.write(str(matrix_RF))
-    f.write(f'\nAccuracy: {accuracy_RF * 100:.2f}%')
-    f.write('\nFeature ranking:\n')
-    for f_index in range(len(features)):
-        f.write(f"{features[f_index]}: {importances[f_index]}\n")
+fieldnames = ["model", "trainingTime", "predictingTime"]
 
+# Open the CSV file in append mode
+with open("../working/times/times.csv", "a", newline='') as csvfile:
+    # Create a DictWriter object, passing the file object and the fieldnames
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    # Check if the file is empty to write the header
+    csvfile.seek(0, 2)  # Move the cursor to the end of the file
+    if csvfile.tell() == 0:
+        # Write the header only if the file is empty
+        writer.writeheader()
+    
+    # Write the dictionary to the CSV file
+    writer.writerow(times)
 
-print(f'Predicting non-classified pc... {get_time()}')
-predictions_RF = rf_model.predict(nonClassified_features)
 # predictions_SVM = svm_model.predict(nonClassified_features)
 result_output_array= np.vstack((nonClassified_X,
                                 nonClassified_Y,
@@ -256,23 +243,6 @@ try:
 except Exception as e:
     print(e)
     send_email.sendNotification('Error in saving classified points as LAS')
-#save plot of importances
-try:
-    #create dictionary
-    combined_dict = {features[i]: importances[i] for i in range(len(features))}
-    #sort the values
-    sorted_dict = dict(sorted(combined_dict.items(), key=lambda item: item[1]))
-    plt.clf()
-    plt.figure(figsize=(10, 6))
-    plt.bar(sorted_dict.keys(), sorted_dict.values(), color='#0a9396')
-    plt.style.use('fast')
-    plt.xlabel('Features')
-    plt.ylabel('Importance')
-    # plt.title('Importance of features')
-    plt.xticks(rotation=45, ha='right')
-    plt.savefig(output_path_png, bbox_inches='tight')
-except:
-    print('chart was not saved')
 
 done_time = time.time()
 
