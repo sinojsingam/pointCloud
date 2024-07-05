@@ -375,7 +375,8 @@ def calculateGeometricFeatures(data_array,neighborhood_radius,dtm = None, data_t
             second_order_second_vectorList[i] = 0.0
         else:
             if dtm is not None:
-                heightRange,average_height, heightBelow, heightAbove = compute_relative_height(relative_z, relative_heights)
+                heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
+                #heightRange,average_height, heightBelow, heightAbove = compute_relative_height(relative_z, relative_heights)
             else:
                 heightRange,average_height, heightBelow, heightAbove = compute_height(point, neighbors)
 
